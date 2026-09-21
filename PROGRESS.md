@@ -6,8 +6,8 @@ from the first unticked box. Do not start over.
 
 ## Steps
 
-- [ ] 1. Scaffold: Next.js + TypeScript + vitest, .gitignore, .env.example, npm scripts
-- [ ] 2. Domain foundations: schemas.ts (zod), money.ts, time.ts, holidays.ts, derive.ts + tests
+- [x] 1. Scaffold: Next.js + TypeScript + vitest, .gitignore, .env.example, npm scripts
+- [x] 2. Domain foundations: schemas.ts (zod), money.ts, time.ts, holidays.ts, derive.ts + tests
 - [ ] 3. Ruleset file `rules/no_default.json` with sources and plain-language explanations
 - [ ] 4. Aggregation (per week / month / payslip period) + tests
 - [ ] 5. Rules engine + all 8 rules + unit tests incl. the 6 required edge cases
@@ -22,3 +22,8 @@ from the first unticked box. Do not start over.
 ## Log
 
 (newest last)
+
+- 2026-09-21 — Step 1 done: Next.js 16 + React 19 + TypeScript strict + vitest, .env.example, .gitignore.
+- 2026-09-21 — Step 2 done: schemas.ts (zod, single source of truth), money.ts (øre), time.ts
+  (ISO weeks, midnight-crossing segments, arbeidsdøgn), holidays.ts (computed Easter), derive.ts.
+  29 unit tests pass. A test caught a real float bug in oreFromKr; the function was fixed.

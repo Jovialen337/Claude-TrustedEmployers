@@ -1,0 +1,36 @@
+{
+  "name": "lonnssjekk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lokalt verktøy som sjekker om du får det arbeidskontrakten din sier",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "demo": "tsx scripts/demo-check.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.127.0",
+    "next": "^16.3.5",
+    "pdfjs-dist": "^6.3.289",
+    "pdfkit": "^0.20.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}
