@@ -12,10 +12,10 @@ from the first unticked box. Do not start over.
 - [x] 4. Aggregation (per week / month / payslip period) + tests
 - [x] 5. Rules engine + all 8 rules + unit tests incl. the 6 required edge cases
 - [x] 6. Local JSON storage + API routes (workspace, check, demo, slett alt)
-- [ ] 7. Manual entry UI (kontrakt, vakter, lønnsslipper) — works with no AI
-- [ ] 8. Result UI: oversikt + tidslinje + flag details with evidence
+- [x] 7. Manual entry UI (kontrakt, vakter, lønnsslipper) — works with no AI
+- [x] 8. Result UI: oversikt + tidslinje + flag details with evidence
 - [ ] 9. AI extraction: PDF text + masking + Claude structured output + confirm/edit screens
-- [ ] 10. Report: PDF export + draft message to employer
+- [x] 10. Report: PDF export + draft message to employer
 - [x] 11. Demo data: fake worker, 3 months, deliberate errors + end-to-end check (moved earlier: the UI needed something to show)
 - [ ] 12. Norwegian README + final verification (tests, real app start, hand-checked kroner)
 
@@ -40,3 +40,7 @@ from the first unticked box. Do not start over.
   115 tests pass. Two more real bugs found: the arbeidsdøgn grouping chained a Friday evening
   and Saturday day shift into one 24-hour window and invented overtime (now delimited by the
   daily rest), and a monthly flag coloured every week of that month red in the timeline.
+- 2026-09-21 — Steps 7, 8 and 10 done: Norwegian UI (start, kontrakt, vakter, lønnsslipper, sjekk,
+  rapport), paste importer for shift-system exports, PDF report and editable draft message.
+  138 tests pass; `npm run build` succeeds. Importer bugs found by tests: the comma separator
+  split Norwegian decimals ("0,5 t"), and 32.13.2026 passed as a date.

@@ -85,6 +85,8 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
     for (const [category, group] of byCategory) {
       let expected = 0;
       const rows = [];
+      /** How the expected amount was arrived at, kept for the calculation line. */
+      const workings: string[] = [];
 
       for (const supplement of group) {
         const hours = roundHours(supplementHours(context.effective, supplement, periodStart, periodEnd));
@@ -96,6 +98,11 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
             supplement.label,
             `${formatHours(hours)} × ${rateText(supplement)} = ${formatKr(ore)} (${windowText(supplement)})`,
           ),
+        );
+        workings.push(
+          supplement.rate.kind === 'per_hour_ore'
+            ? `${formatHours(hours)} × ${formatKr(supplement.rate.value)}`
+            : `${formatHours(hours)} × ${formatKr(context.hourlyRateOre)} × ${formatPercent(supplement.rate.value)}`,
         );
       }
 
@@ -125,7 +132,11 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
             ev('Kilde til satsen', group.map((s) => s.source).join('; ')),
           ],
           calculation: {
-            expression: `${formatKr(expected)} − ${formatKr(paid)} = ${formatKr(missing)}`,
+            // Show the working when there is one supplement of this kind; with several,
+            // the per-supplement lines are in the evidence just above.
+            expression:
+              (workings.length === 1 ? `${workings[0]} = ${formatKr(expected)}` : formatKr(expected)) +
+              ` − ${formatKr(paid)} betalt = ${formatKr(missing)}`,
             resultOre: missing,
           },
           amountOre: missing,
