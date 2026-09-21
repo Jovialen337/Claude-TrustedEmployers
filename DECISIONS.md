@@ -232,3 +232,13 @@ plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
 - **2026-09-21 — Next's generated `AGENTS.md`/`CLAUDE.md` are turned off** (`agentRules: false`).
   The dev server writes them on startup; this project keeps its documentation in README.md,
   PLAN.md, DECISIONS.md and PROGRESS.md, and unrequested files should not appear in the repo.
+
+## Privacy audit of the repository
+
+- **2026-09-21 — No real personal data is committed, and the placeholders were checked, not
+  assumed.** A repo-wide search for eleven-digit runs and formatted account numbers hits only
+  the masking tests, which need such strings as *input*. Each one was verified against the
+  mod-11 control digits of a Norwegian fødselsnummer: `01019012345`, `02029012345` and
+  `41019012345` are all invalid as fødselsnummer, so they cannot belong to a real person. The
+  card number in the tests is the standard Visa test number. `.env` and `.data/` are
+  gitignored, and the demo worker is entirely invented (Kari Nordmann, Kafé Nordlys AS).
