@@ -181,6 +181,30 @@ describe('hviletid', () => {
     expect(flag!.title).toContain('18,0 t');
   });
 
+  it('nedgraderer til info når frien ligger over ukeskiftet', () => {
+    // Uke 34 har vakter mandag, onsdag, torsdag, fredag og lørdag. Inne i uka er lengste
+    // friperiode 34 t (man 22:00 -> ons 08:00), men fra lørdag i uke 33 til mandag i uke 34
+    // er det 47 t sammenhengende fri. Loven krever 35 t i løpet av sju dager, ikke innenfor
+    // mandag–søndag, så dette skal ikke være et krav mot arbeidsgiver.
+    const result = check({
+      contract: contract({ contractedHoursPerWeek: 33.5 }),
+      shifts: [
+        shift('2026-08-15', '10:00', '18:00'), // lørdag i uke 33
+        shift('2026-08-17', '17:00', '22:00'),
+        shift('2026-08-19', '08:00', '19:00'),
+        shift('2026-08-20', '17:00', '22:00'),
+        shift('2026-08-21', '17:00', '22:00'),
+        shift('2026-08-22', '10:00', '18:00'),
+      ],
+      payslips: [payslip(AUGUST.start, AUGUST.end, [ordinaryLine(49)])],
+    });
+    const flag = flagsFor(result, 'rest_periods').find((f) => f.id === 'rest_periods:ukentlig:2026-W34')!;
+    expect(flag).toBeDefined();
+    expect(flag.severity).toBe('til_info');
+    expect(flag.evidence.find((e) => e.label === 'Lengste friperiode i uka')!.value).toBe('34,0 t');
+    expect(flag.evidence.find((e) => e.label === 'Lengste friperiode som berører uka')!.value).toBe('47,0 t');
+  });
+
   it('flagger ikke to vakter med god nok hvile', () => {
     const result = check({
       shifts: [shift('2026-08-17', '08:00', '14:00'), shift('2026-08-18', '08:00', '14:00')],
@@ -425,7 +449,11 @@ describe('feriepenger', () => {
     const flag = flagsFor(result, 'feriepenger').find((f) => f.id.includes('avsetning'));
     expect(flag).toBeDefined();
     expect(flag!.severity).toBe('bor_sjekkes');
-    expect(flag!.calculation!.expression).toBe('100 000,00 kr × 10,2 % = 10 200,00 kr');
+    // Regnestykket skal ende på det beløpet flagget krever, ikke bare på avsetningen.
+    expect(flag!.calculation!.expression).toBe(
+      '100 000,00 kr × 10,2 % = 10 200,00 kr − 8 000,00 kr avsatt = 2 200,00 kr',
+    );
+    expect(flag!.calculation!.resultOre).toBe(flag!.amountOre);
     expect(flag!.amountOre).toBe(220_000);
   });
 
@@ -441,7 +469,9 @@ describe('feriepenger', () => {
       ],
     });
     const flag = flagsFor(result, 'feriepenger').find((f) => f.id.includes('avsetning'));
-    expect(flag!.calculation!.expression).toBe('100 000,00 kr × 12 % = 12 000,00 kr');
+    expect(flag!.calculation!.expression).toBe(
+      '100 000,00 kr × 12 % = 12 000,00 kr − 10 200,00 kr avsatt = 1 800,00 kr',
+    );
   });
 
   it('sier fra når grunnlaget ikke står på lønnsslippen', () => {

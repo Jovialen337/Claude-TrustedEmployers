@@ -39,6 +39,7 @@
         "max_overtime_hours_per_7_days": 10,
         "max_overtime_hours_per_4_weeks": 25,
         "max_overtime_hours_per_52_weeks": 200,
+        "new_period_after_rest_hours": 11,
         "tolerance_hours": 0.25
       },
       "sources": [
@@ -106,6 +107,7 @@
       "params": {
         "break_required_after_hours": 5.5,
         "long_day_hours": 8,
+        "new_period_after_rest_hours": 11,
         "min_total_break_minutes_long_day": 30
       },
       "sources": [

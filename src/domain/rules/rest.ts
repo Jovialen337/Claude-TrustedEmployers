@@ -73,6 +73,20 @@ export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
     to: shiftEndInstant(shift),
   }));
 
+  /**
+   * Rest periods that lie between two actual shifts. Used to tell a real breach from a
+   * weekly free period that simply straddles the week boundary: § 10-8 asks for 35 hours
+   * within seven days, and nothing says the seven days have to be Monday to Sunday.
+   * The open-ended stretches before the first and after the last shift are deliberately
+   * left out — they are absence of data, not known rest.
+   */
+  const boundedGaps: { from: number; to: number; hours: number }[] = [];
+  for (let i = 1; i < busy.length; i += 1) {
+    const from = busy[i - 1]!.to;
+    const to = busy[i]!.from;
+    if (to > from) boundedGaps.push({ from, to, hours: (to - from) / 60 });
+  }
+
   for (const week of context.weeks) {
     if (!isComplete(week, context.dataRange)) continue;
     const windowFrom = toEpochDay(week.start) * MINUTES_PER_DAY;
@@ -86,31 +100,52 @@ export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
       }))
       .sort((a, b) => a.from - b.from);
 
-    let longestGap = 0;
+    if (inside.length === 0) continue;
+
+    let longestInWeek = 0;
     let cursor = windowFrom;
     for (const interval of inside) {
-      longestGap = Math.max(longestGap, interval.from - cursor);
+      longestInWeek = Math.max(longestInWeek, interval.from - cursor);
       cursor = Math.max(cursor, interval.to);
     }
-    longestGap = Math.max(longestGap, windowTo - cursor);
+    longestInWeek = Math.max(longestInWeek, windowTo - cursor);
 
-    const gapHours = roundHours(longestGap / 60);
-    if (inside.length === 0 || gapHours >= minWeekly) continue;
+    const gapHours = roundHours(longestInWeek / 60);
+    if (gapHours >= minWeekly) continue;
+
+    // Is there a long enough rest that touches this week, even if it sits across the boundary?
+    const straddling = boundedGaps
+      .filter((gap) => gap.to > windowFrom && gap.from < windowTo)
+      .reduce((longest, gap) => Math.max(longest, gap.hours), 0);
+    const coveredAcrossBoundary = roundHours(straddling) >= minWeekly;
 
     flags.push(
       buildFlag(context, {
         key: `ukentlig:${week.key}`,
-        severity: gapHours < minWeeklyAgreed ? 'sannsynlig_feil' : 'bor_sjekkes',
-        title: `Bare ${formatHours(gapHours)} sammenhengende fri i ${week.label.toLowerCase()}`,
+        severity: coveredAcrossBoundary
+          ? 'til_info'
+          : gapHours < minWeeklyAgreed
+            ? 'sannsynlig_feil'
+            : 'bor_sjekkes',
+        title: coveredAcrossBoundary
+          ? `Den ukentlige frien i ${week.label.toLowerCase()} ligger over ukeskiftet`
+          : `Bare ${formatHours(gapHours)} sammenhengende fri i ${week.label.toLowerCase()}`,
         periodLabel: week.label,
         periodStart: week.start,
         periodEnd: week.end,
-        message:
-          `Du skal ha minst ${formatHours(minWeekly)} sammenhengende fri i løpet av sju dager, og friperioden ` +
-          `skal så langt som mulig omfatte en søndag. Den lengste sammenhengende friperioden vi finner i ` +
-          `${week.label.toLowerCase()} er ${formatHours(gapHours)}.`,
+        message: coveredAcrossBoundary
+          ? `Inne i ${week.label.toLowerCase()} (mandag til søndag) er den lengste sammenhengende friperioden ` +
+            `${formatHours(gapHours)}, altså under ${formatHours(minWeekly)}. Men du hadde ` +
+            `${formatHours(roundHours(straddling))} sammenhengende fri rett før eller etter uka, og loven krever ` +
+            `${formatHours(minWeekly)} i løpet av sju dager — ikke nødvendigvis innenfor mandag til søndag. ` +
+            `Dette er derfor mest til informasjon.`
+          : `Du skal ha minst ${formatHours(minWeekly)} sammenhengende fri i løpet av sju dager, og friperioden ` +
+            `skal så langt som mulig omfatte en søndag. Den lengste sammenhengende friperioden vi finner i ` +
+            `${week.label.toLowerCase()} er ${formatHours(gapHours)}, og vi finner heller ingen lang nok friperiode ` +
+            `rett før eller etter uka.`,
         evidence: [
-          ev('Lengste friperiode', formatHours(gapHours)),
+          ev('Lengste friperiode i uka', formatHours(gapHours)),
+          ev('Lengste friperiode som berører uka', straddling > 0 ? formatHours(roundHours(straddling)) : 'Ingen funnet'),
           ev('Lovens krav', formatHours(minWeekly)),
           ev('Laveste ved avtale', formatHours(minWeeklyAgreed)),
           ev('Vakter denne uka', String(inside.length)),

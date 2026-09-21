@@ -18,7 +18,9 @@ export const breaks: RuleFn = (context: RuleContext): Flag[] => {
   const longDay = numberParam(context.rule, 'long_day_hours', 8);
   const minLongDayBreak = numberParam(context.rule, 'min_total_break_minutes_long_day', 30);
 
-  for (const group of doegnGroups(effectiveShifts(context.shifts))) {
+  const newPeriodAfterRestHours = numberParam(context.rule, 'new_period_after_rest_hours', 11);
+
+  for (const group of doegnGroups(effectiveShifts(context.shifts), { newPeriodAfterRestHours })) {
     const workedHours = group.workedMinutes / 60;
     const breakMinutes = group.shifts.reduce((sum, shift) => sum + shift.breakMinutes, 0);
     const times = group.shifts.map((shift) => `${shift.start}–${shift.end}`).join(', ');

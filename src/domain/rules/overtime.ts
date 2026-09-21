@@ -36,7 +36,8 @@ interface DoegnExcess {
 
 /** Overtime from working more than the daily limit, per arbeidsdøgn (24 h from work start). */
 function dailyExcesses(context: RuleContext, dailyLimit: number, tolerance: number): DoegnExcess[] {
-  return doegnGroups(effectiveShifts(context.shifts))
+  const newPeriodAfterRestHours = numberParam(context.rule, 'new_period_after_rest_hours', 11);
+  return doegnGroups(effectiveShifts(context.shifts), { newPeriodAfterRestHours })
     .map((group) => {
       const workedHours = group.workedMinutes / 60;
       return { date: group.date, workedHours, excessHours: roundHours(workedHours - dailyLimit) };

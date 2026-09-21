@@ -282,29 +282,53 @@ export interface Doegn {
   date: DateStr;
   shifts: Shift[];
   workedMinutes: number;
+  /** Absolute minute instant work in this døgn last stopped. */
+  endInstant: number;
 }
 
+export const DEFAULT_NEW_DOEGN_AFTER_REST_HOURS = 11;
+
 /**
- * Group shifts into arbeidsdøgn: 24-hour windows that begin when work begins.
- * A new døgn starts at the first shift that begins 24 hours or more after the current
- * window started. This is how "9 timer per 24 timer" is measured for night shifts.
+ * Group shifts into arbeidsdøgn: work periods measured over 24 hours from when work begins.
+ *
+ * Two things close a døgn and open the next one:
+ *  - the worker has had their daily rest (by default 11 hours, the AML § 10-8 minimum), or
+ *  - 24 hours have passed since the døgn began.
+ *
+ * The rest condition is what matters in practice. Without it, a Friday evening shift and a
+ * Saturday day shift 12 hours later would land in the same 24-hour window and be reported
+ * as overtime, even though the worker had a full daily rest between them. With it, a
+ * 22:00–06:00 night shift stays one work period, and a "clopening" — closing at 23:00 and
+ * opening at 07:00 — is correctly seen as one long stretch of work inside 24 hours.
  */
-export function doegnGroups(shifts: readonly Shift[]): Doegn[] {
+export function doegnGroups(
+  shifts: readonly Shift[],
+  options: { newPeriodAfterRestHours?: number } = {},
+): Doegn[] {
+  const restThresholdMinutes =
+    (options.newPeriodAfterRestHours ?? DEFAULT_NEW_DOEGN_AFTER_REST_HOURS) * 60;
   const sorted = [...shifts].sort((a, b) => shiftStartInstant(a) - shiftStartInstant(b));
   const groups: Doegn[] = [];
 
   for (const shift of sorted) {
-    const instant = shiftStartInstant(shift);
+    const start = shiftStartInstant(shift);
+    const end = shiftEndInstant(shift);
     const current = groups[groups.length - 1];
-    if (current && instant < current.startInstant + MINUTES_PER_DAY) {
+
+    const insideWindow = current !== undefined && start < current.startInstant + MINUTES_PER_DAY;
+    const beforeRest = current !== undefined && start - current.endInstant < restThresholdMinutes;
+
+    if (current && insideWindow && beforeRest) {
       current.shifts.push(shift);
       current.workedMinutes += shiftWorkedMinutes(shift);
+      current.endInstant = Math.max(current.endInstant, end);
     } else {
       groups.push({
-        startInstant: instant,
+        startInstant: start,
         date: shift.date,
         shifts: [shift],
         workedMinutes: shiftWorkedMinutes(shift),
+        endInstant: end,
       });
     }
   }

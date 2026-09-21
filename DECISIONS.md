@@ -132,3 +132,57 @@ Format: `YYYY-MM-DD — topic — decision (why)`
 - **2026-09-21 — Missing payslips are only reported for complete months.** For the month in
   progress the payslip may simply not have been issued yet, and a false "missing payslip"
   would undermine trust in every other flag.
+
+## Demo — hand calculations
+
+Recalculated by hand, and asserted in `tests/demo.test.ts`. Contract: 60 % of 37,5 t =
+**22,5 t/uke**, hourly rate **198,50 kr**.
+
+1. **Kveldstillegg juni 2026 — 1 825,00 kr.** Evening hours after 18:00 in June:
+   week 23 (1.–7.) 4 × 4 t = 16 t; week 24 (8.–14.) 16 t; week 25 (15.–21.) 3 × 4 t plus
+   Friday 19th 18:00–23:00 = 5 t → 17 t; week 26 (22.–28.) 16 t; Monday 29th and Tuesday 30th
+   4 t + 4 t = 8 t. Sum **73,0 t**. The June payslip has no kveldstillegg line at all, so the
+   whole contractual rate is missing: 73,0 t × 25,00 kr = **1 825,00 kr**. ✔ matches the app.
+2. **Overtidstillegg juli 2026 — 158,80 kr.** Wednesday 15 July 08:00–19:00 with no break is
+   11,0 t inside one arbeidsdøgn. The limit is 9 t, so 2,0 t is overtime. The payslip shows no
+   overtime hours, so all 2,0 t lack their supplement:
+   2,0 t × 198,50 kr × 40 % = 2,0 × 79,40 kr = **158,80 kr**. ✔ matches the app.
+   (Only the supplement is claimed here: the hours themselves were paid as ordinary hours.)
+3. **Ubetalte timer juli 2026 — 496,25 kr.** Hours worked in July: 17,5 t (2.–4. July, the
+   part of week 27 that falls in July) + 15,0 t (week 28) + 33,5 t (week 29) + 28,5 t (week 30)
+   = **94,5 t**. The payslip pays 92,0 t. Difference 2,5 t × 198,50 kr = **496,25 kr**.
+   ✔ matches the app.
+4. **Helligdagstillegg mai 2026 — 1 985,00 kr.** Shifts falling on a public holiday:
+   Thursday 14 May (Kristi himmelfartsdag) 17:00–22:00 = 5,0 t and Monday 25 May (2. pinsedag)
+   17:00–22:00 = 5,0 t → 10,0 t. Contract rate 100 % of hourly:
+   10,0 t × 198,50 kr × 100 % = **1 985,00 kr**. ✔ matches the app.
+5. **Feil timesats mai 2026 — 1 485,00 kr.** 110,0 t paid at 185,00 kr instead of 198,50 kr:
+   110,0 × (198,50 − 185,00) = 110,0 × 13,50 kr = **1 485,00 kr**. ✔ matches the app.
+6. **Uke 28 under stillingsprosenten — 1 488,75 kr.** 22,5 t avtalt − 15,0 t satt opp = 7,5 t;
+   7,5 t × 198,50 kr = **1 488,75 kr**. Kept out of the "owed" total (see above). ✔
+7. **Feriepenger juli 2026 — 630,00 kr.** 65 000,00 kr × 10,2 % = 6 630,00 kr, but 6 000,00 kr
+   is set aside: difference **630,00 kr**, reported as "bør sjekkes". ✔ matches the app.
+8. **Overtid juni 2026 — 357,30 kr** (not planted directly, a consequence of error 4).
+   Friday 19 June 15:00–23:00 (8,0 t) and Saturday 20 June 07:00–13:00 minus a 30-minute break
+   (5,5 t) are only 8 hours apart, so they are one arbeidsdøgn of 13,5 t: 4,5 t over the 9 t
+   limit. 4,5 t × 198,50 kr × 40 % = **357,30 kr**. ✔ matches the app.
+
+**Total owed** = 1 985,00 + 1 825,00 + 1 485,00 + 496,25 + 357,30 + 158,80 = **6 307,35 kr**,
+plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
+
+## Storage and demo
+
+- **2026-09-21 — A single JSON file, not SQLite.** `better-sqlite3` is a native module that
+  has to be rebuilt per platform, which is a poor fit for an app people are meant to run
+  locally with one `npm install`. One `.data/workspace.json`, written atomically (temp file +
+  rename), covers the whole data model, is trivially inspectable by the user, and makes
+  "Slett alt" a single directory removal.
+- **2026-09-21 — Demo payslips are written as literals, not derived from the shifts.** If the
+  payslips were computed by the same aggregation code the rules use, a counting bug would
+  appear on both sides and cancel out. The literals mean a change in how hours are counted
+  breaks `tests/demo.test.ts` instead of passing silently.
+- **2026-09-21 — Overlapping supplements are both claimed.** If a contract has both a weekend
+  and a public-holiday supplement and a shift falls on a public holiday that is also a Sunday,
+  the app claims both. Many agreements pay only the higher one. Not modelled; the demo avoids
+  the ambiguity by putting the holiday shifts on weekdays, and the flag always shows which
+  contract term it came from so the user can correct it.

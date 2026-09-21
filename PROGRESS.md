@@ -11,12 +11,12 @@ from the first unticked box. Do not start over.
 - [x] 3. Ruleset file `rules/no_default.json` with sources and plain-language explanations
 - [x] 4. Aggregation (per week / month / payslip period) + tests
 - [x] 5. Rules engine + all 8 rules + unit tests incl. the 6 required edge cases
-- [ ] 6. Local JSON storage + API routes (workspace, check, demo, slett alt)
+- [x] 6. Local JSON storage + API routes (workspace, check, demo, slett alt)
 - [ ] 7. Manual entry UI (kontrakt, vakter, lønnsslipper) — works with no AI
 - [ ] 8. Result UI: oversikt + tidslinje + flag details with evidence
 - [ ] 9. AI extraction: PDF text + masking + Claude structured output + confirm/edit screens
 - [ ] 10. Report: PDF export + draft message to employer
-- [ ] 11. Demo data: fake worker, 3 months, deliberate errors + end-to-end check
+- [x] 11. Demo data: fake worker, 3 months, deliberate errors + end-to-end check (moved earlier: the UI needed something to show)
 - [ ] 12. Norwegian README + final verification (tests, real app start, hand-checked kroner)
 
 ## Log
@@ -35,3 +35,8 @@ from the first unticked box. Do not start over.
 - 2026-09-21 — Step 5 done: all 8 rules + engine + timeline. 95 tests pass, including the six
   required edge cases in tests/edge-cases.test.ts. Two real bugs found by tests: formatPercent
   mangled values like 20,08 %, and weeks with no shifts were not bucketed at all.
+- 2026-09-21 — Step 6 + 11 done: local JSON store (atomic writes, "slett alt"), API routes for
+  workspace/check/demo, and the demo worker with three months of data and eight planted errors.
+  115 tests pass. Two more real bugs found: the arbeidsdøgn grouping chained a Friday evening
+  and Saturday day shift into one 24-hour window and invented overtime (now delimited by the
+  daily rest), and a monthly flag coloured every week of that month red in the timeline.

@@ -21,7 +21,10 @@ export interface TimelineWeek {
   workedHours: number;
   paidHours: number | null;
   payslipLabels: string[];
+  /** Flags that belong to this week alone. These decide the week's colour and amount. */
   flagIds: string[];
+  /** Flags for a longer period that this week is part of, e.g. the month's payslip. */
+  periodFlagIds: string[];
   worstSeverity: Severity | null;
   amountOre: number;
 }
@@ -36,7 +39,13 @@ export function buildTimeline(
   return weeks.map((week) => {
     const exact = payslipCovering(payslips, week.start, week.end);
     const overlapping = payslipsOverlapping(payslips, week.start, week.end);
-    const weekFlags = flags.filter((flag) => flag.periodStart <= week.end && flag.periodEnd >= week.start);
+    const touchingFlags = flags.filter((flag) => flag.periodStart <= week.end && flag.periodEnd >= week.start);
+    // A flag spanning a whole month must not paint every week of that month red; it is
+    // shown against the payslip period instead.
+    const weekFlags = touchingFlags.filter(
+      (flag) => flag.periodStart >= week.start && flag.periodEnd <= week.end,
+    );
+    const periodFlags = touchingFlags.filter((flag) => !weekFlags.includes(flag));
 
     const worstSeverity = weekFlags.reduce<Severity | null>((worst, flag) => {
       if (worst === null) return flag.severity;
@@ -55,6 +64,7 @@ export function buildTimeline(
       paidHours: exact ? payslipSummary(exact).paidWorkHours : null,
       payslipLabels: overlapping.map((payslip) => payslipSummary(payslip).label),
       flagIds: weekFlags.map((flag) => flag.id),
+      periodFlagIds: periodFlags.map((flag) => flag.id),
       worstSeverity,
       amountOre: weekFlags.reduce((sum, flag) => sum + (flag.amountOre ?? 0), 0),
     };

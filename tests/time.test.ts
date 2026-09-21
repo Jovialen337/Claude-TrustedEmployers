@@ -132,17 +132,36 @@ describe('tidsvindu for tillegg', () => {
 });
 
 describe('arbeidsdøgn og hviletid', () => {
-  it('grupperer vakter i 24-timersvinduer fra arbeidsstart', () => {
+  it('starter et nytt arbeidsdøgn når du har hatt den daglige hvilen', () => {
+    // Nattevakt 22:00–06:00, så kveldsvakt 18:00 samme dag: 12 timer fri mellom -> nytt døgn.
     const groups = doegnGroups([
       shift({ date: '2026-08-20', start: '22:00', end: '06:00' }),
       shift({ date: '2026-08-21', start: '18:00', end: '22:00' }),
-      shift({ date: '2026-08-23', start: '08:00', end: '16:00' }),
     ]);
-    // Vakt 1 starter 20/8 22:00; vakt 2 starter 21/8 18:00 = 20 timer senere -> samme døgn.
+    expect(groups).toHaveLength(2);
+    expect(groups[0]!.workedMinutes).toBe(480);
+    expect(groups[1]!.workedMinutes).toBe(240);
+  });
+
+  it('holder en stenge- og åpnevakt med 8 timer fri i samme arbeidsdøgn', () => {
+    // Stenger 23:00, åpner 07:00: bare 8 timer fri, altså samme arbeidsdøgn -> 13,5 t.
+    const groups = doegnGroups([
+      shift({ date: '2026-06-19', start: '15:00', end: '23:00' }),
+      shift({ date: '2026-06-20', start: '07:00', end: '13:00', breakMinutes: 30 }),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.workedMinutes / 60).toBe(13.5);
+  });
+
+  it('lukker et arbeidsdøgn etter 24 timer uansett', () => {
+    const groups = doegnGroups([
+      shift({ date: '2026-08-20', start: '08:00', end: '12:00' }),
+      shift({ date: '2026-08-20', start: '20:00', end: '23:00' }),
+      shift({ date: '2026-08-21', start: '08:00', end: '12:00' }),
+    ]);
+    // Vakt 1 og 2: 8 timer fri -> samme døgn. Vakt 3 starter 24 timer etter døgnstart -> nytt.
     expect(groups).toHaveLength(2);
     expect(groups[0]!.shifts).toHaveLength(2);
-    expect(groups[0]!.workedMinutes).toBe(480 + 240);
-    expect(groups[1]!.shifts).toHaveLength(1);
   });
 
   it('regner hviletid mellom vakter over midnatt', () => {

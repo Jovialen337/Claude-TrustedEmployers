@@ -81,10 +81,18 @@ export const feriepenger: RuleFn = (context: RuleContext): Flag[] => {
           ev('Forventet avsetning', formatKr(expected)),
           ev('Differanse', formatKr(difference)),
         ],
-        calculation: {
-          expression: `${formatKr(basis)} × ${formatPercent(rate)} = ${formatKr(expected)}`,
-          resultOre: expected,
-        },
+        calculation:
+          difference > 0
+            ? {
+                expression:
+                  `${formatKr(basis)} × ${formatPercent(rate)} = ${formatKr(expected)} − ` +
+                  `${formatKr(accrued)} avsatt = ${formatKr(difference)}`,
+                resultOre: difference,
+              }
+            : {
+                expression: `${formatKr(basis)} × ${formatPercent(rate)} = ${formatKr(expected)}`,
+                resultOre: null,
+              },
         amountOre: difference > 0 ? difference : null,
         documentRefs: [...refsFromPayslip(summary.payslip), ...contractRef(context)],
       }),
