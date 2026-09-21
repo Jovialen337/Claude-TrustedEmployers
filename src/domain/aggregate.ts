@@ -10,6 +10,7 @@ import { isHoliday } from './holidays';
 import type { DateStr, Payslip, PayslipCategory, Shift, Supplement } from './schemas';
 import { OVERTIME_CATEGORIES, WORK_HOUR_CATEGORIES } from './schemas';
 import {
+  addDays,
   isoWeek,
   isoWeekEnd,
   isoWeekKey,
@@ -89,12 +90,27 @@ function bucketize(
   shifts: readonly Shift[],
   keyOf: (date: DateStr) => string,
   rangeOf: (key: string) => { start: DateStr; end: DateStr; label: string },
+  next: (key: string) => string,
+  span: { start: DateStr; end: DateStr } | null,
 ): Bucket[] {
   const planned = segmentsOf(plannedShifts(shifts));
   const effective = segmentsOf(effectiveShifts(shifts));
 
   const keys = new Set<string>();
   for (const segment of [...planned, ...effective]) keys.add(keyOf(segment.date));
+
+  // Weeks and months with no shifts at all still get a bucket, as long as they lie inside
+  // the span we have data for. A week where you were given no hours is exactly the kind of
+  // week a worker needs to see.
+  if (span) {
+    let key = keyOf(span.start);
+    const lastKey = keyOf(span.end);
+    for (let guard = 0; guard < 600; guard += 1) {
+      keys.add(key);
+      if (key === lastKey) break;
+      key = next(key);
+    }
+  }
 
   return [...keys]
     .sort()
@@ -114,7 +130,10 @@ function bucketize(
     });
 }
 
-export function weekBuckets(shifts: readonly Shift[]): Bucket[] {
+export function weekBuckets(
+  shifts: readonly Shift[],
+  span: { start: DateStr; end: DateStr } | null = null,
+): Bucket[] {
   return bucketize(
     shifts,
     (date) => isoWeekKey(isoWeek(date)),
@@ -122,14 +141,21 @@ export function weekBuckets(shifts: readonly Shift[]): Bucket[] {
       const week = parseIsoWeekKey(key);
       return { start: isoWeekStart(week), end: isoWeekEnd(week), label: isoWeekLabel(week) };
     },
+    (key) => isoWeekKey(isoWeek(addDays(isoWeekStart(parseIsoWeekKey(key)), 7))),
+    span,
   );
 }
 
-export function monthBuckets(shifts: readonly Shift[]): Bucket[] {
+export function monthBuckets(
+  shifts: readonly Shift[],
+  span: { start: DateStr; end: DateStr } | null = null,
+): Bucket[] {
   return bucketize(
     shifts,
     (date) => monthKey(date),
     (key) => ({ start: monthStart(key), end: monthEnd(key), label: monthLabel(key) }),
+    (key) => monthKey(addDays(monthEnd(key), 1)),
+    span,
   );
 }
 

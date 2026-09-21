@@ -101,8 +101,9 @@ export function formatHours(hours: number): string {
   return `${formatHoursNumber(hours)} t`;
 }
 
+/** 40 -> "40 %", 82.5 -> "82,5 %". Only a trailing ",0" is dropped, so 20.08 stays "20,08 %". */
 export function formatPercent(value: number): string {
-  return `${formatHoursNumber(value).replace(',0', '')} %`;
+  return `${formatHoursNumber(value).replace(/,0$/, '')} %`;
 }
 
 export function minutesToHours(minutes: number): number {

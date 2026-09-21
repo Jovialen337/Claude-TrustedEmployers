@@ -105,10 +105,27 @@ export function isoWeekLabel(week: IsoWeek): string {
   return `Uke ${week.week} ${week.year}`;
 }
 
+export const WEEKDAY_NAMES = [
+  'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag',
+] as const;
+
 export const MONTH_NAMES = [
   'januar', 'februar', 'mars', 'april', 'mai', 'juni',
   'juli', 'august', 'september', 'oktober', 'november', 'desember',
 ] as const;
+
+/** "fredag 21. august 2026" */
+export function formatDateLong(date: DateStr): string {
+  const weekday = WEEKDAY_NAMES[weekdayIso(date) - 1] ?? '';
+  const day = Number(date.slice(8, 10));
+  const month = MONTH_NAMES[Number(date.slice(5, 7)) - 1] ?? '';
+  return `${weekday} ${day}. ${month} ${date.slice(0, 4)}`;
+}
+
+/** "21.08.2026" */
+export function formatDateShort(date: DateStr): string {
+  return `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)}`;
+}
 
 /** "2026-08" */
 export function monthKey(date: DateStr): string {

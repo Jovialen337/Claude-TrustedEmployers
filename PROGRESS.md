@@ -10,7 +10,7 @@ from the first unticked box. Do not start over.
 - [x] 2. Domain foundations: schemas.ts (zod), money.ts, time.ts, holidays.ts, derive.ts + tests
 - [x] 3. Ruleset file `rules/no_default.json` with sources and plain-language explanations
 - [x] 4. Aggregation (per week / month / payslip period) + tests
-- [ ] 5. Rules engine + all 8 rules + unit tests incl. the 6 required edge cases
+- [x] 5. Rules engine + all 8 rules + unit tests incl. the 6 required edge cases
 - [ ] 6. Local JSON storage + API routes (workspace, check, demo, slett alt)
 - [ ] 7. Manual entry UI (kontrakt, vakter, lønnsslipper) — works with no AI
 - [ ] 8. Result UI: oversikt + tidslinje + flag details with evidence
@@ -32,3 +32,6 @@ from the first unticked box. Do not start over.
   marked `sekundaerkilde` (see DECISIONS.md). 34 tests pass.
 - 2026-09-21 — Step 4 done: aggregate.ts (effective shifts, ISO-week/month buckets, payslip
   summaries, supplement-window hours) + fixtures. 47 tests pass.
+- 2026-09-21 — Step 5 done: all 8 rules + engine + timeline. 95 tests pass, including the six
+  required edge cases in tests/edge-cases.test.ts. Two real bugs found by tests: formatPercent
+  mangled values like 20,08 %, and weeks with no shifts were not bucketed at all.

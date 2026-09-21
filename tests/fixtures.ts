@@ -2,13 +2,16 @@
  * Hand-made fixtures for the rules tests. Fake data only: fake name, fake employer,
  * no personnummer and no account numbers anywhere.
  */
+import { runCheck } from '@/domain/engine';
 import type {
   Contract,
   Payslip,
   PayslipCategory,
   PayslipLine,
+  RuleId,
   Shift,
   Supplement,
+  Workspace,
 } from '@/domain/schemas';
 
 export const HOURLY_RATE_ORE = 19850; // 198,50 kr
@@ -113,4 +116,32 @@ export function supplement(overrides: Partial<Supplement> = {}): Supplement {
     source: 'Arbeidskontrakt pkt. 5',
     ...overrides,
   };
+}
+
+export function workspace(parts: {
+  contract?: Contract | null;
+  shifts?: Shift[];
+  payslips?: Payslip[];
+  ruleOverrides?: Workspace['ruleOverrides'];
+}): Workspace {
+  return {
+    version: 1,
+    contract: parts.contract === undefined ? contract() : parts.contract,
+    shifts: parts.shifts ?? [],
+    payslips: parts.payslips ?? [],
+    documents: [],
+    ruleOverrides: parts.ruleOverrides ?? {},
+    settings: { fullTimeHoursPerWeek: 37.5 },
+    createdAt: '2026-09-21T00:00:00.000Z',
+    updatedAt: '2026-09-21T00:00:00.000Z',
+  };
+}
+
+/** Run a check with a fixed clock so results are byte-for-byte reproducible. */
+export function check(parts: Parameters<typeof workspace>[0]) {
+  return runCheck(workspace(parts), { now: '2026-09-21T12:00:00.000Z' });
+}
+
+export function flagsFor(result: ReturnType<typeof runCheck>, ruleId: RuleId) {
+  return result.flags.filter((flag) => flag.ruleId === ruleId);
 }

@@ -4,6 +4,7 @@ import {
   parseKrInput,
   formatHoursNumber,
   formatKr,
+  formatPercent,
   formatOre,
   hoursTimesRate,
   mulOre,
@@ -64,5 +65,15 @@ describe('formatering', () => {
     expect(formatHoursNumber(2.25)).toBe('2,25');
     expect(formatHours(37.5)).toBe('37,5 t');
     expect(roundHours(7.499999)).toBe(7.5);
+  });
+});
+
+describe('prosent', () => {
+  it('dropper bare en etterfølgende tidel', () => {
+    expect(formatPercent(40)).toBe('40 %');
+    expect(formatPercent(82.5)).toBe('82,5 %');
+    expect(formatPercent(10.2)).toBe('10,2 %');
+    // ',0' inne i tallet skal ikke fjernes: 20,08 % må ikke bli 208 %.
+    expect(formatPercent(20.08)).toBe('20,08 %');
   });
 });

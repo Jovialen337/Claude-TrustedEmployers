@@ -99,3 +99,36 @@ Format: `YYYY-MM-DD — topic — decision (why)`
   across the shift. Without this a 30-minute unpaid break inside an evening window would
   earn an evening supplement. If a contract says exactly when the break falls, that is more
   precise than this app can currently model.
+
+## Rules engine
+
+- **2026-09-21 — Each money claim is made by exactly one rule.** Overlapping claims were
+  the main double-counting risk, so the split is fixed: `scheduled_vs_paid` claims the
+  missing **base** pay for unpaid hours, `overtime` claims **only the 40 % supplement**,
+  `supplements` claims only the tillegg. A worker who worked 10 unpaid hours of which 1 was
+  overtime is owed 10 × rate + 1 × rate × 40 %, and that is what the app reports.
+- **2026-09-21 — Two separate headline figures, not one.** `estimatedOwedOre` covers work
+  done but not paid (`scheduled_vs_paid`, `overtime`, `supplements`). Hours the worker never
+  got, although their stillingsprosent entitled them, are a contract claim that depends on
+  circumstances (declined shifts, holiday, illness), so they are reported separately as
+  `underScheduledOre` plus `hoursShortVsContract`. Feriepenger amounts are kept out of both
+  and reported as something to check.
+- **2026-09-21 — Weekly flags carry money; monthly and whole-period flags are roll-ups
+  with `amountOre: null`.** A week is the finest granularity where both sides are known
+  exactly. The roll-ups still show the kroner figure in their evidence, so the user sees the
+  month total without it being added to any sum twice.
+- **2026-09-21 — Partial weeks and months at the edges of the data are never flagged.** If
+  a week sticks out past the range we have data for, the missing hours are missing data, not
+  missing pay. Weeks *inside* the range with no shifts at all are bucketed and flagged,
+  because a week where you were given no hours is exactly what a part-timer needs to see.
+- **2026-09-21 — Weekly overtime beyond the daily excess is attributed only to pay periods
+  that fully contain the week.** Daily overtime is attributable to a date, but "over 40 h in
+  a week" is not, so for a week straddling two payslips only its daily excess is compared.
+  Documented rather than silently approximated.
+- **2026-09-21 — `actual_hours_vs_contract` never asserts the § 14-4 a condition is met.**
+  It states how many whole weeks were actually examined, says the right depends on twelve
+  months of regular merarbeid counted from when the claim is made, and points to
+  Tvisteløsningsnemnda. With fewer than 52 weeks of data it says so explicitly.
+- **2026-09-21 — Missing payslips are only reported for complete months.** For the month in
+  progress the payslip may simply not have been issued yet, and a false "missing payslip"
+  would undermine trust in every other flag.
