@@ -113,7 +113,7 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
     flags.push(
       buildFlag(context, {
         key: summary.payslip.id,
-        title: `Overtidstillegg mangler for ${summary.label.toLowerCase()}`,
+        title: 'Overtidstillegg mangler',
         periodLabel: summary.label,
         periodStart,
         periodEnd,
@@ -188,7 +188,7 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
       buildFlag(context, {
         key: `grense-uke:${week.key}`,
         severity: 'bor_sjekkes',
-        title: `Mer overtid enn loven tillater i ${week.label.toLowerCase()}`,
+        title: 'Mer overtid enn loven tillater i løpet av sju dager',
         periodLabel: week.label,
         periodStart: week.start,
         periodEnd: week.end,

@@ -64,7 +64,7 @@ export const feriepenger: RuleFn = (context: RuleContext): Flag[] => {
     flags.push(
       buildFlag(context, {
         key: `avsetning:${summary.payslip.id}`,
-        title: `Sjekk feriepengene på ${summary.label.toLowerCase()}`,
+        title: 'Sjekk feriepengene på denne lønnsslippen',
         periodLabel: summary.label,
         periodStart: summary.payslip.periodStart,
         periodEnd: summary.payslip.periodEnd,

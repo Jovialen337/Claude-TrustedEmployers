@@ -17,7 +17,7 @@ from the first unticked box. Do not start over.
 - [x] 9. AI extraction: PDF text + masking + Claude structured output + confirm/edit screens
 - [x] 10. Report: PDF export + draft message to employer
 - [x] 11. Demo data: fake worker, 3 months, deliberate errors + end-to-end check (moved earlier: the UI needed something to show)
-- [ ] 12. Norwegian README + final verification (tests, real app start, hand-checked kroner)
+- [x] 12. Norwegian README + final verification (tests, real app start, hand-checked kroner)
 
 ## Log
 
@@ -47,3 +47,15 @@ from the first unticked box. Do not start over.
 - 2026-09-21 — Step 9 done: PII masking at the API boundary, PDF text extraction, prompts that
   forbid guessing and judging, validate-and-re-ask, the /les confirm-and-edit screen, and the
   settings page with rule toggles and "Slett alt". 155 tests pass; build is clean.
+- 2026-09-21 — Step 12 done: Norwegian README (how to run, what is checked, what is NOT checked,
+  the privacy model). Verified for real: 156 tests pass, clean build, server started, every page
+  loaded in a browser with no console errors, demo produces the expected flags and amounts, PDF
+  and draft message generated. Flag titles no longer repeat the period shown beside them.
+
+## Ideas not built (deliberately out of scope)
+
+- Rasterising a scanned PDF so it can be read as an image (the user is asked for a screenshot).
+- "Higher of" logic for overlapping supplements (weekend + public holiday on the same hours).
+- Gjennomsnittsberegning of working time (AML § 10-5) beyond storing the flag and letting the
+  user override the daily/weekly limits.
+- Attributing paid hours to individual weeks — deliberately refused, see DECISIONS.md.

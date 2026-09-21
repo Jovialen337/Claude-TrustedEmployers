@@ -9,13 +9,14 @@ import { formatDateLong } from '../domain/time';
 import { DISCLAIMER } from './disclaimer';
 
 function claimLine(flag: Flag, index: number): string {
-  const lines = [`${index}. ${flag.title} (${flag.periodLabel})`];
+  const lines = [`${index}. ${flag.title} — ${flag.periodLabel}`];
   if (flag.calculation) lines.push(`   Slik har jeg regnet: ${flag.calculation.expression}`);
   const source = flag.sources[0];
   if (source) {
-    lines.push(
-      `   Grunnlag: ${source.law} ${source.paragraph}`.trimEnd(),
-    );
+    // "Arbeidsmiljøloven § 10-4", but "Arbeidsavtalen, Avtalte tillegg" — a contract point
+    // is not a paragraph, so it does not read as one.
+    const separator = source.paragraph.startsWith('§') ? ' ' : ', ';
+    lines.push(`   Grunnlag: ${source.law}${separator}${source.paragraph}`);
   }
   return lines.join('\n');
 }
@@ -52,7 +53,7 @@ export function draftMessage(result: CheckResult, contract: Contract | null): st
     parts.push('I tillegg er det noe jeg gjerne vil forstå bedre:');
     parts.push(
       questions
-        .map((flag, index) => `${index + 1}. ${flag.title} (${flag.periodLabel})`)
+        .map((flag, index) => `${index + 1}. ${flag.title} — ${flag.periodLabel}`)
         .join('\n'),
     );
   }

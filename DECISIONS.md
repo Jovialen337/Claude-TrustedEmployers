@@ -212,3 +212,23 @@ plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
 - **2026-09-21 — The transport is injected.** `extractStructured` takes a `send` function, so
   retries, JSON recovery, masking and the domain mapping are all unit tested without a key or
   a network. Only `src/extraction/claude.ts` touches the SDK.
+
+## Running and verifying
+
+- **2026-09-21 — `npm run build && npm start` is the documented way to run the app.** It is
+  what was actually verified here: every page was loaded in a real browser against
+  `next start`, the API routes were exercised, the PDF was generated and its text read back to
+  confirm that æøå and § survive pdfkit's WinAnsi encoding. `npm run dev` is documented for
+  development.
+- **2026-09-21 — Under `next dev` in this container, pages stay on "Laster …".** The client
+  never hydrates, so `useEffect` never runs and no data is fetched. Diagnosed rather than
+  guessed at: all 18 script tags load with no failed requests and no page errors, a manual
+  `fetch('/api/check')` from the page context returns 200 with 16 flags, and the same pages
+  hydrate correctly under `next start` in the same browser. The one anomaly is that Chromium
+  cannot complete the dev server's HMR WebSocket upgrade (`ERR_INVALID_HTTP_RESPONSE`), while
+  `curl` performing the same upgrade against the same server gets `101 Switching Protocols`.
+  So the dev server is healthy and this is specific to the browser in this sandbox; the README
+  says what to do if it happens.
+- **2026-09-21 — Next's generated `AGENTS.md`/`CLAUDE.md` are turned off** (`agentRules: false`).
+  The dev server writes them on startup; this project keeps its documentation in README.md,
+  PLAN.md, DECISIONS.md and PROGRESS.md, and unrequested files should not appear in the repo.

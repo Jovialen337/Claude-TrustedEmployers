@@ -128,8 +128,8 @@ export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
             ? 'sannsynlig_feil'
             : 'bor_sjekkes',
         title: coveredAcrossBoundary
-          ? `Den ukentlige frien i ${week.label.toLowerCase()} ligger over ukeskiftet`
-          : `Bare ${formatHours(gapHours)} sammenhengende fri i ${week.label.toLowerCase()}`,
+          ? 'Den ukentlige frien ligger over ukeskiftet'
+          : `Bare ${formatHours(gapHours)} sammenhengende fri denne uka`,
         periodLabel: week.label,
         periodStart: week.start,
         periodEnd: week.end,

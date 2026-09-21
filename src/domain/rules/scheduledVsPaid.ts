@@ -53,7 +53,7 @@ export const scheduledVsPaid: RuleFn = (context: RuleContext): Flag[] => {
         flags.push(
           buildFlag(context, {
             key: `timer:${summary.payslip.id}`,
-            title: `${formatHours(missing)} jobbet, men ikke betalt (${summary.label.toLowerCase()})`,
+            title: `${formatHours(missing)} jobbet, men ikke betalt`,
             periodLabel: summary.label,
             periodStart,
             periodEnd,
@@ -94,7 +94,7 @@ export const scheduledVsPaid: RuleFn = (context: RuleContext): Flag[] => {
       flags.push(
         buildFlag(context, {
           key: `sats:${summary.payslip.id}:${line.id}`,
-          title: `Lavere timesats enn kontrakten (${summary.label.toLowerCase()})`,
+          title: 'Lavere timesats enn kontrakten',
           periodLabel: summary.label,
           periodStart,
           periodEnd,
@@ -134,7 +134,7 @@ export const scheduledVsPaid: RuleFn = (context: RuleContext): Flag[] => {
       buildFlag(context, {
         key: `mangler-lonnsslipp:${month.key}`,
         severity: 'til_info',
-        title: `Vi mangler lønnsslipp for ${month.label}`,
+        title: 'Vi mangler lønnsslipp for denne måneden',
         periodLabel: month.label,
         periodStart: month.start,
         periodEnd: month.end,

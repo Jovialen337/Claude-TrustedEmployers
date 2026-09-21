@@ -114,7 +114,7 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
       flags.push(
         buildFlag(context, {
           key: `${summary.payslip.id}:${category}`,
-          title: `${CATEGORY_LABELS[category]} mangler (${summary.label.toLowerCase()})`,
+          title: `${CATEGORY_LABELS[category]} mangler`,
           periodLabel: summary.label,
           periodStart,
           periodEnd,

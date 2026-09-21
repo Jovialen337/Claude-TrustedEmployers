@@ -153,6 +153,17 @@ describe('demoen', () => {
     }
   });
 
+  it('gjentar ikke perioden i tittelen, siden den alltid vises ved siden av', () => {
+    // Tittelen sier HVA, periodeteksten sier NÅR. Uten dette blir meldingen til
+    // arbeidsgiver stående med «... (lønn for mai 2026) (Lønn for mai 2026)».
+    for (const flag of result.flags) {
+      expect(
+        flag.title.toLowerCase(),
+        `${flag.id} gjentar perioden i tittelen`,
+      ).not.toContain(flag.periodLabel.toLowerCase());
+    }
+  });
+
   it('bygger en tidslinje over alle de tolv ukene', () => {
     const complete = result.timeline.filter((week) => week.complete);
     expect(complete).toHaveLength(12);

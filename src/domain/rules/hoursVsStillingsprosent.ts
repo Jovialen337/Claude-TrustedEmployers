@@ -49,7 +49,7 @@ export const hoursVsStillingsprosent: RuleFn = (context: RuleContext): Flag[] =>
     flags.push(
       buildFlag(context, {
         key: week.key,
-        title: `Færre timer enn stillingsprosenten i ${week.label.toLowerCase()}`,
+        title: 'Færre timer enn stillingsprosenten din',
         periodLabel: week.label,
         periodStart: week.start,
         periodEnd: week.end,
@@ -91,7 +91,7 @@ export const hoursVsStillingsprosent: RuleFn = (context: RuleContext): Flag[] =>
       buildFlag(context, {
         key: month.key,
         severity: 'til_info',
-        title: `Oppsummert for ${month.label}: ${formatHours(short)} under avtalt`,
+        title: `Oppsummert: ${formatHours(short)} under avtalt arbeidstid`,
         periodLabel: month.label,
         periodStart: month.start,
         periodEnd: month.end,
