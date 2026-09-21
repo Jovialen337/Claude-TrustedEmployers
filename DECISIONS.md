@@ -45,3 +45,36 @@ Format: `YYYY-MM-DD — topic — decision (why)`
   `ordinaer`, `merarbeid`, `overtid_40`, `overtid_100` and `helligdag_arbeid` count as
   "hours paid". Kveld/natt/helg/helligdag lines are extra money on hours already counted,
   so counting their hours too would double count.
+
+## Legal verification
+
+- **2026-09-21 — lovdata.no is unreachable from this environment, so rules are marked
+  `sekundaerkilde`, not `lovdata`.** The network egress proxy blocks lovdata.no
+  (`EGRESS_BLOCKED`). Every rule still cites its canonical lovdata paragraph and URL, but
+  the wording was verified against secondary sources (LO, Arbeidstilsynet, Virke,
+  Juristforbundet, law-firm summaries) rather than the statute text itself. The schema
+  therefore has a third value, `sekundaerkilde`, so the report can say honestly how a rule
+  was checked. **Anything shown to a user should be re-verified against lovdata before this
+  tool is used for real.** What was confirmed this way:
+  - AML § 10-4(1): alminnelig arbeidstid 9 t/24 t and 40 t/7 dager.
+  - AML § 10-6(11): overtidstillegg **minst 40 %**; § 10-6(4): overtime should not exceed
+    10 t/7 dager, 25 t/4 uker, 200 t/52 uker.
+  - AML § 10-8(1)(2): 11 t daily rest, 35 t weekly rest, weekly rest to include Sunday as
+    far as possible; § 10-8(3): by agreement not below 8 t / 28 t.
+  - AML § 10-9(1): a break is required when the day exceeds 5,5 t; breaks total at least
+    30 min when the day is at least 8 t; a break counts as working time if the worker
+    cannot leave the workplace.
+  - AML § 14-4 a: a part-timer who has regularly worked beyond agreed hours over the last
+    12 months may claim a position matching actual hours; the 12 months run from when the
+    claim is made; holiday and sick leave are excluded.
+  - Ferieloven § 10: 10,2 % of feriepengegrunnlaget, 12 % with an agreed fifth week,
+    12,5 % for workers over 60.
+- **2026-09-21 — Overtime *volume* limits added to the `overtime` rule.** § 10-6(4) sets
+  maximum overtime (10 t/7 dager, 25 t/4 uker, 200 t/52 uker). The spec did not ask for it,
+  but it falls inside "overtid (AML § 10-6)" and is cheap to check, so the rule also flags
+  too *much* overtime (as information, with no kroner amount). Measured in ISO-week buckets
+  rather than truly rolling 7-day windows, which is simpler and matches how a worker reads
+  their own week.
+- **2026-09-21 — Rest-period severity is graded, not fixed.** Less than the 8 t that even
+  an agreement cannot go below is reported as `Sannsynlig feil`; between 8 t and 11 t is
+  `Bør sjekkes`, since a tariff-based agreement may legitimately allow it.

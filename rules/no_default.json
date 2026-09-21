@@ -1,0 +1,235 @@
+{
+  "id": "no_default",
+  "version": "1.0.0",
+  "name": "Norske standardregler (arbeidsmiljøloven og ferieloven)",
+  "jurisdiction": "NO",
+  "fullTimeHoursPerWeek": 37.5,
+  "rules": [
+    {
+      "id": "hours_vs_stillingsprosent",
+      "enabled": true,
+      "title": "Får du timene stillingsprosenten din gir deg?",
+      "explanation": "Stillingsprosenten i kontrakten din sier hvor mye du skal jobbe. 50 % av en full stilling på 37,5 timer er 18,75 timer i uka. Denne regelen sammenligner avtalt arbeidstid med timene du er satt opp på og timene du faktisk har fått betalt for — per uke, per måned og for hele perioden.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "weekly_tolerance_hours": 0.5,
+        "monthly_tolerance_hours": 2,
+        "min_amount_ore": 2000
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-6 første ledd bokstav j",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-6",
+          "note": "Arbeidsavtalen skal opplyse om lengde og plassering av den daglige og ukentlige arbeidstiden. Selve stillingsprosenten og timetallet følger av din egen kontrakt."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "overtime",
+      "enabled": true,
+      "title": "Overtid — minst 40 % tillegg",
+      "explanation": "Jobber du mer enn 9 timer i døgnet eller 40 timer i uka, er timene over dette overtid, og overtid skal ha minst 40 % tillegg på toppen av vanlig timelønn. Merk forskjellen på overtid og merarbeid: er du deltidsansatt og jobber mer enn kontrakten din sier, men fortsatt under lovens grenser, er det merarbeid. Merarbeid skal betales, men gir ikke krav på overtidstillegg etter loven.",
+      "severity": "sannsynlig_feil",
+      "params": {
+        "overtime_supplement_percent": 40,
+        "normal_daily_limit_hours": 9,
+        "normal_weekly_limit_hours": 40,
+        "max_overtime_hours_per_7_days": 10,
+        "max_overtime_hours_per_4_weeks": 25,
+        "max_overtime_hours_per_52_weeks": 200,
+        "tolerance_hours": 0.25
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-4 første ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-4",
+          "note": "Alminnelig arbeidstid: 9 timer i løpet av 24 timer og 40 timer i løpet av sju dager. Grensene kan være andre ved gjennomsnittsberegning eller tariffavtale."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-6 ellevte ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-6",
+          "note": "For overtidsarbeid skal det betales et tillegg på minst 40 % av lønnen for tilsvarende arbeid i den alminnelige arbeidstiden."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-6 fjerde ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-6",
+          "note": "Overtidsarbeid skal som hovedregel ikke overstige 10 timer i sju dager, 25 timer i fire sammenhengende uker og 200 timer i 52 uker."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-4 a",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-4a",
+          "note": "Merarbeid er timer utover avtalt arbeidstid, men innenfor lovens alminnelige grenser."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "rest_periods",
+      "enabled": true,
+      "title": "Hviletid mellom vaktene",
+      "explanation": "Du skal ha minst 11 timer sammenhengende fri i løpet av 24 timer, og minst 35 timer sammenhengende fri i løpet av sju dager. Med skriftlig avtale mellom arbeidsgiver og tillitsvalgte i tariffbundet virksomhet kan den daglige hvilen settes ned til 8 timer og den ukentlige til 28 timer, men da har du krav på kompenserende hvile.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "min_daily_rest_hours": 11,
+        "min_daily_rest_hours_by_agreement": 8,
+        "min_weekly_rest_hours": 35,
+        "min_weekly_rest_hours_by_agreement": 28
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-8 første og andre ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-8",
+          "note": "11 timer sammenhengende arbeidsfri i løpet av 24 timer, og 35 timer sammenhengende arbeidsfri i løpet av sju dager. Den ukentlige friperioden skal så langt som mulig omfatte søndag."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-8 tredje ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-8",
+          "note": "Avtalt arbeidsfri kan ikke være kortere enn 8 timer i løpet av 24 timer eller 28 timer i løpet av sju dager."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "breaks",
+      "enabled": true,
+      "title": "Pauser på lange vakter",
+      "explanation": "Jobber du mer enn 5,5 timer sammenhengende, har du krav på minst én pause. Er vakta 8 timer eller mer, skal pausene til sammen være minst 30 minutter. Får du ikke forlate arbeidsplassen i pausen, eller finnes det ikke et tilfredsstillende pauserom, skal pausen regnes som arbeidstid — og da skal den betales.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "break_required_after_hours": 5.5,
+        "long_day_hours": 8,
+        "min_total_break_minutes_long_day": 30
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-9 første ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-9",
+          "note": "Arbeidstaker skal ha minst én pause dersom den daglige arbeidstiden overstiger fem og en halv time. Pausene skal til sammen være minst en halv time hvis den daglige arbeidstiden er minst åtte timer."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-9 første ledd tredje punktum",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-9",
+          "note": "Pausen regnes som en del av arbeidstiden når arbeidstaker ikke fritt kan forlate arbeidsplassen, eller det ikke finnes tilfredsstillende pauserom."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "actual_hours_vs_contract",
+      "enabled": true,
+      "title": "Har du krav på større stilling?",
+      "explanation": "Har du jobbet jevnlig mer enn kontrakten din sier de siste tolv månedene, kan du ha rett til en stilling som tilsvarer det du faktisk har jobbet. Kravet gjelder ikke hvis arbeidsgiver kan dokumentere at behovet for merarbeidet er borte. Tolvmånedersperioden regnes fra du fremmer kravet, og ferie og sykefravær teller ikke med.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "min_weeks_observed": 12,
+        "excess_tolerance_percent": 5,
+        "lookback_months": 12
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-4 a",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-4a",
+          "note": "Deltidsansatte som de siste tolv månedene jevnlig har arbeidet utover avtalt arbeidstid, har rett til stilling tilsvarende faktisk arbeidstid i denne perioden."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 17-2",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§17-2",
+          "note": "Tvist om retten til større stilling kan bringes inn for Tvisteløsningsnemnda."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "scheduled_vs_paid",
+      "enabled": true,
+      "title": "Er alle timene du jobbet betalt?",
+      "explanation": "Hver time du er satt opp på eller har jobbet, skal dukke opp på en lønnsslipp — i riktig kategori og med riktig sats. Denne regelen sammenligner vaktplanen din med lønnsslippene for samme periode, og viser differansen i timer og kroner.",
+      "severity": "sannsynlig_feil",
+      "params": {
+        "tolerance_hours": 0.25,
+        "min_amount_ore": 2000,
+        "rate_tolerance_ore": 50
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-15 femte ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-15",
+          "note": "Arbeidstaker har krav på skriftlig oppgave over beregningsmåten for lønn, beregningsgrunnlaget for feriepenger og eventuelle trekk."
+        },
+        {
+          "law": "Arbeidsavtalen",
+          "paragraph": "Avtalt timelønn",
+          "url": null,
+          "note": "Satsen som sammenlignes hentes fra din egen kontrakt, ikke fra loven."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "supplements",
+      "enabled": true,
+      "title": "Kvelds-, natt-, helge- og helligdagstillegg",
+      "explanation": "Tillegg for kveld, natt, helg og helligdag følger av kontrakten eller tariffavtalen din — ikke av arbeidsmiljøloven. Derfor bruker denne regelen bare tidsrommene og satsene du selv har lagt inn fra kontrakten eller tariffavtalen, og sjekker om timene du jobbet i de tidsrommene faktisk er betalt med tillegg.",
+      "severity": "sannsynlig_feil",
+      "params": {
+        "tolerance_ore": 500
+      },
+      "sources": [
+        {
+          "law": "Arbeidsavtalen eller tariffavtalen",
+          "paragraph": "Avtalte tillegg",
+          "url": null,
+          "note": "Arbeidsmiljøloven gir ingen generell rett til kvelds-, natt- eller helgetillegg. Satsene må stå i kontrakten eller tariffavtalen."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-11",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-11",
+          "note": "Definerer nattarbeid (arbeid mellom kl. 21.00 og kl. 06.00), men regulerer ikke betaling for det."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "feriepenger",
+      "enabled": true,
+      "title": "Feriepenger — ser grunnlaget riktig ut?",
+      "explanation": "Feriepenger er minst 10,2 % av feriepengegrunnlaget, som i hovedsak er all lønn du har fått utbetalt i året før. Har du avtale om fem uker ferie, er satsen vanligvis 12 %. Denne regelen sammenligner satsen og grunnlaget på lønnsslippene med det vi regner ut fra lønna di, og flagger avvik som noe du bør sjekke — ikke som en sikker feil, siden hva som inngår i grunnlaget varierer.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "rate_percent_statutory": 10.2,
+        "rate_percent_five_weeks": 12.0,
+        "rate_percent_over_60": 12.5,
+        "tolerance_ore": 1000
+      },
+      "sources": [
+        {
+          "law": "Ferieloven",
+          "paragraph": "§ 10 andre ledd",
+          "url": "https://lovdata.no/lov/1988-04-29-21/§10",
+          "note": "Feriepengene utgjør 10,2 % av feriepengegrunnlaget. Ved avtalefestet femte ferieuke er satsen vanligvis 12 %. For arbeidstakere over 60 år kommer et tillegg (12,5 %)."
+        },
+        {
+          "law": "Ferieloven",
+          "paragraph": "§ 10 første ledd",
+          "url": "https://lovdata.no/lov/1988-04-29-21/§10",
+          "note": "Feriepengegrunnlaget er arbeidsvederlag utbetalt i opptjeningsåret. Feriepenger fra året før, og noen andre ytelser, inngår ikke."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    }
+  ]
+}

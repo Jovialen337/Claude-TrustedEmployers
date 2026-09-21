@@ -224,7 +224,7 @@ export const Rule = z.object({
   severity: Severity,
   params: RuleParams.default({}),
   sources: z.array(RuleSource).default([]),
-  verified: z.enum(['lovdata', 'ikke_verifisert']).default('ikke_verifisert'),
+  verified: z.enum(['lovdata', 'sekundaerkilde', 'ikke_verifisert']).default('ikke_verifisert'),
 });
 
 export const RuleSet = z.object({
