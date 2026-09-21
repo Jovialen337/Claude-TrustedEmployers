@@ -7,6 +7,7 @@
  */
 import { formatKr, formatPercent, mulOre } from '../money';
 import type { Flag, PayslipCategory } from '../schemas';
+import { feriepengerRatePercent, withSource } from '../thresholds';
 import { buildFlag, contractRef, ev, numberParam, refsFromPayslip } from './helpers';
 import type { RuleContext, RuleFn } from './types';
 
@@ -20,7 +21,32 @@ export const feriepenger: RuleFn = (context: RuleContext): Flag[] => {
 
   const statutory = numberParam(context.rule, 'rate_percent_statutory', 10.2);
   const tolerance = numberParam(context.rule, 'tolerance_ore', 1000);
-  const rate = context.contract.feriepengerRatePercent || statutory;
+  // The contract's rate governs, but never below ferielovens minimum.
+  const rateThreshold = feriepengerRatePercent(context.contract, context.rule);
+  const rate = rateThreshold.value;
+
+  if (rateThreshold.belowStatutory && context.summaries.length > 0) {
+    flags.push(
+      buildFlag(context, {
+        key: 'sats-under-lovens-minimum',
+        severity: 'bor_sjekkes',
+        title: 'Kontrakten oppgir lavere feriepengesats enn ferieloven krever',
+        periodLabel: 'Hele perioden',
+        periodStart: range.start,
+        periodEnd: range.end,
+        message:
+          `Kontrakten din oppgir ${formatPercent(rateThreshold.belowStatutory.contractValue)} i feriepenger. ` +
+          `Ferieloven krever minst ${formatPercent(rateThreshold.belowStatutory.statutory)}, så vi har regnet ` +
+          `med lovens sats.`,
+        evidence: [
+          ev('Sats i kontrakten', formatPercent(rateThreshold.belowStatutory.contractValue)),
+          ev('Lovens minimum', formatPercent(rateThreshold.belowStatutory.statutory)),
+        ],
+        amountOre: null,
+        documentRefs: contractRef(context),
+      }),
+    );
+  }
 
   const stated = context.summaries.filter(
     (summary) => summary.payslip.feriepengerBasisOre !== null || summary.payslip.feriepengerAccruedOre !== null,
@@ -29,6 +55,7 @@ export const feriepenger: RuleFn = (context: RuleContext): Flag[] => {
   /* ----------------------------------------- ingenting oppgitt på lønnsslippene */
   if (stated.length === 0) {
     return [
+      ...flags,
       buildFlag(context, {
         key: 'ikke-oppgitt',
         severity: 'til_info',
@@ -77,7 +104,7 @@ export const feriepenger: RuleFn = (context: RuleContext): Flag[] => {
         evidence: [
           ev('Grunnlag på lønnsslippen', formatKr(basis)),
           ev('Avsatt på lønnsslippen', formatKr(accrued)),
-          ev('Sats vi bruker', `${formatPercent(rate)}${context.contract.feriepengerRatePercent ? ' (fra kontrakten)' : ''}`),
+          ev('Sats vi bruker', withSource(formatPercent(rate), rateThreshold)),
           ev('Forventet avsetning', formatKr(expected)),
           ev('Differanse', formatKr(difference)),
         ],

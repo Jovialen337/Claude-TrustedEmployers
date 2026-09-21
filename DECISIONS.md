@@ -143,10 +143,11 @@ Recalculated by hand, and asserted in `tests/demo.test.ts`. Contract: 60 % of 37
    Friday 19th 18:00–23:00 = 5 t → 17 t; week 26 (22.–28.) 16 t; Monday 29th and Tuesday 30th
    4 t + 4 t = 8 t. Sum **73,0 t**. The June payslip has no kveldstillegg line at all, so the
    whole contractual rate is missing: 73,0 t × 25,00 kr = **1 825,00 kr**. ✔ matches the app.
-2. **Overtidstillegg juli 2026 — 158,80 kr.** Wednesday 15 July 08:00–19:00 with no break is
-   11,0 t inside one arbeidsdøgn. The limit is 9 t, so 2,0 t is overtime. The payslip shows no
-   overtime hours, so all 2,0 t lack their supplement:
-   2,0 t × 198,50 kr × 40 % = 2,0 × 79,40 kr = **158,80 kr**. ✔ matches the app.
+2. **Overtidstillegg juli 2026 — 198,50 kr.** Wednesday 15 July 08:00–19:00 with no break is
+   11,0 t inside one arbeidsdøgn. The limit is 9 t (from the law — the contract sets no other),
+   so 2,0 t is overtime. The demo contract's tariff gives **50 %**, not the statutory 40 %, and
+   the rule must use the contract's figure: 2,0 t × 198,50 kr × 50 % = 2,0 × 99,25 kr =
+   **198,50 kr**. ✔ matches the app.
    (Only the supplement is claimed here: the hours themselves were paid as ordinary hours.)
 3. **Ubetalte timer juli 2026 — 496,25 kr.** Hours worked in July: 17,5 t (2.–4. July, the
    part of week 27 that falls in July) + 15,0 t (week 28) + 33,5 t (week 29) + 28,5 t (week 30)
@@ -162,12 +163,13 @@ Recalculated by hand, and asserted in `tests/demo.test.ts`. Contract: 60 % of 37
    7,5 t × 198,50 kr = **1 488,75 kr**. Kept out of the "owed" total (see above). ✔
 7. **Feriepenger juli 2026 — 630,00 kr.** 65 000,00 kr × 10,2 % = 6 630,00 kr, but 6 000,00 kr
    is set aside: difference **630,00 kr**, reported as "bør sjekkes". ✔ matches the app.
-8. **Overtid juni 2026 — 357,30 kr** (not planted directly, a consequence of error 4).
+8. **Overtid juni 2026 — 446,63 kr** (not planted directly, a consequence of error 4).
    Friday 19 June 15:00–23:00 (8,0 t) and Saturday 20 June 07:00–13:00 minus a 30-minute break
    (5,5 t) are only 8 hours apart, so they are one arbeidsdøgn of 13,5 t: 4,5 t over the 9 t
-   limit. 4,5 t × 198,50 kr × 40 % = **357,30 kr**. ✔ matches the app.
+   limit. 4,5 t × 198,50 kr = 893,25 kr, × 50 % = 446,625 kr, which rounds to **446,63 kr**.
+   ✔ matches the app.
 
-**Total owed** = 1 985,00 + 1 825,00 + 1 485,00 + 496,25 + 357,30 + 158,80 = **6 307,35 kr**,
+**Total owed** = 1 985,00 + 1 825,00 + 1 485,00 + 496,25 + 446,63 + 198,50 = **6 436,38 kr**,
 plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
 
 ## Storage and demo
@@ -242,3 +244,60 @@ plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
   `41019012345` are all invalid as fødselsnummer, so they cannot belong to a real person. The
   card number in the tests is the standard Visa test number. `.env` and `.data/` are
   gitignored, and the demo worker is entirely invented (Kari Nordmann, Kafé Nordlys AS).
+
+## Contract first, for every rule
+
+- **2026-09-21 — The contract is the primary source for every threshold, and the law is the
+  fallback.** `src/domain/thresholds.ts` resolves each threshold from the contract, dropping to
+  the statutory value in `rules/no_default.json` only when the contract is silent. Every
+  resolved threshold carries its provenance, and each flag now shows it — "9,0 t
+  (arbeidsmiljøloven § 10-4)" versus "50 % (fra kontrakten din)" — so a worker can see whether
+  they are being measured against their own agreement or against the law. Applied to all eight
+  rules, not only the ones where it was easy.
+- **2026-09-21 — A contract term weaker than the law is raised to the law and reported.** Three
+  directions are modelled: `atLeast` (the law is a floor: overtime supplement, rest hours,
+  minimum break), `atMost` (the law is a ceiling: how long you may work before a break is due)
+  and `free` (working-time limits, which § 10-5 lets an averaging agreement raise). A contract
+  promising 25 % overtime, 6 hours of daily rest or 8 % feriepenger is not honoured; the
+  statutory value is used and a separate finding says the term is not valid. This seemed more
+  useful than silently ignoring the contract or silently obeying it.
+- **2026-09-21 — Working-time limits above the statutory ones are flagged when no averaging
+  agreement is recorded.** § 10-5 requires a written agreement for that, so a contract with a
+  10-hour day and no such agreement gets a "bør sjekkes" telling the worker what to look for.
+- **2026-09-21 — A paid break counts as working time.** The contract's `paidBreak` makes the
+  engine compute hours from the full shift (`applyPaidBreak`), which is also what § 10-9 says
+  when the worker cannot leave the workplace. The original records keep the registered break,
+  and the breaks rule reads it from there — so "the break is paid" never hides "no break was
+  taken". Tested both ways.
+- **2026-09-21 — Overtime is checked by rate as well as by hours.** If overtime hours were paid
+  but at a rate below the contract's own supplement, the difference is claimed. It cannot
+  double count with the missing-hours claim, because the two cover different hours.
+- **2026-09-21 — Extraction reads the agreed terms, and may not invent them.** The contract
+  extraction schema now covers the overtime supplement, working-time limits, rest hours, break
+  rules, paid break and feriepenger rate. Each defaults to null so a document that says nothing
+  about overtime does not waste a retry, and the prompt says explicitly not to fill in the
+  statutory value — that distinction (contract vs law) is the app's to make.
+- **2026-09-21 — The demo contract states a tariff-agreed 50 % overtime supplement.** The point
+  of the demo is to show real behaviour, and a Norwegian tariff commonly gives more than the
+  statutory 40 %. The hand calculations above were redone for it: the two overtime findings are
+  now 198,50 kr and 446,63 kr, and the total owed is 6 436,38 kr.
+
+## Uploading the work schedule
+
+- **2026-09-21 — Schedule upload is parsed locally, with no API key.** `POST
+  /api/import-schedule` decodes a CSV or text file, or extracts a PDF's text on this machine,
+  and runs it through the same parser as the paste box. The AI route stays for images and
+  awkward layouts. Uploading the most common case — an export from the shift system — therefore
+  works for someone who never sets up a key, and nothing leaves the machine.
+- **2026-09-21 — An uploaded schedule is previewed before it is saved.** The shifts, their
+  hours and any unreadable rows are shown, individual rows can be dropped, and nothing is
+  written to the workspace until the user confirms — the same rule the AI path follows.
+- **2026-09-21 — Images are refused by the upload route rather than half-handled.** It answers
+  with a pointer to "Les dokument", which is the path that can actually read an image.
+- **2026-09-21 — Two bugs found by running it rather than by reading it.** The form-state key
+  for the feriepenger rate (`feriepenger`) differs from the contract field
+  (`feriepengerRatePercent`), and the first version of the save validation compared the two,
+  so every blank agreed-term field was reported as "not a number". The logic moved into
+  `src/domain/agreedTerms.ts` and is unit tested. Separately, `npm run build` type-checks the
+  tests too, and a `Uint8Array` in a new test was not assignable to `BlobPart`; vitest alone
+  had not caught it.

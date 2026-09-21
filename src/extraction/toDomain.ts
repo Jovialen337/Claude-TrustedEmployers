@@ -67,10 +67,25 @@ export function contractFromExtraction(
     contractedHoursPerWeek: extracted.contractedHoursPerWeek ?? existing?.contractedHoursPerWeek ?? null,
     wage: { kind: wageKind, amountOre: wageOre },
     tariffavtale: extracted.tariffavtale ?? existing?.tariffavtale ?? null,
-    averagingAgreement: existing?.averagingAgreement ?? false,
-    normalDailyLimitHours: existing?.normalDailyLimitHours ?? null,
-    normalWeeklyLimitHours: existing?.normalWeeklyLimitHours ?? null,
-    feriepengerRatePercent: existing?.feriepengerRatePercent ?? 10.2,
+    averagingAgreement: extracted.averagingAgreement ?? existing?.averagingAgreement ?? false,
+
+    // Agreed terms: what the document said, else what the user already had, else null —
+    // which is what makes the rules fall back to the law.
+    normalDailyLimitHours: extracted.normalDailyLimitHours ?? existing?.normalDailyLimitHours ?? null,
+    normalWeeklyLimitHours: extracted.normalWeeklyLimitHours ?? existing?.normalWeeklyLimitHours ?? null,
+    overtimeSupplementPercent:
+      extracted.overtimeSupplementPercent ?? existing?.overtimeSupplementPercent ?? null,
+    maxOvertimeHoursPer7Days: existing?.maxOvertimeHoursPer7Days ?? null,
+    maxOvertimeHoursPer4Weeks: existing?.maxOvertimeHoursPer4Weeks ?? null,
+    maxOvertimeHoursPer52Weeks: existing?.maxOvertimeHoursPer52Weeks ?? null,
+    agreedDailyRestHours: extracted.agreedDailyRestHours ?? existing?.agreedDailyRestHours ?? null,
+    agreedWeeklyRestHours: extracted.agreedWeeklyRestHours ?? existing?.agreedWeeklyRestHours ?? null,
+    breakRequiredAfterHours: extracted.breakRequiredAfterHours ?? existing?.breakRequiredAfterHours ?? null,
+    longDayHours: existing?.longDayHours ?? null,
+    minBreakMinutesLongDay: extracted.minBreakMinutesLongDay ?? existing?.minBreakMinutesLongDay ?? null,
+    paidBreak: extracted.paidBreak ?? existing?.paidBreak ?? false,
+    largerPositionLookbackMonths: existing?.largerPositionLookbackMonths ?? null,
+    feriepengerRatePercent: extracted.feriepengerRatePercent ?? existing?.feriepengerRatePercent ?? null,
     supplements: kept.length > 0 ? kept : (existing?.supplements ?? []),
     documentRef: documentRef ?? existing?.documentRef ?? null,
   };

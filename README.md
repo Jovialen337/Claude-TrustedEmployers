@@ -52,9 +52,11 @@ Appen tar deg gjennom fire steg, og du kan stoppe og fortsette når du vil.
 1. **Kontrakt** — arbeidsgiver, stillingsprosent, timelønn eller månedslønn, og eventuelle
    avtalte tillegg (kveld, natt, helg, helligdag).
 2. **Vakter** — dato, fra, til og pause. Har du en eksport fra vaktsystemet (Planday, Quinyx,
-   Tamigo og liknende), kan du lime hele fila rett inn. Både `2026-08-17` og `17.08.2026` går,
-   og pause kan skrives som `30`, `30 min` eller `0:30`. Linjer som ikke kan leses, får du
-   beskjed om — de forsvinner ikke i stillhet.
+   Tamigo og liknende), kan du **laste opp fila** (CSV, TXT eller PDF) eller lime radene rett
+   inn. Opplasting leses lokalt på din egen maskin og krever ingen API-nøkkel; du får se
+   vaktene og godkjenne dem før de lagres. Både `2026-08-17` og `17.08.2026` går, og pause kan
+   skrives som `30`, `30 min` eller `0:30`. Linjer som ikke kan leses, får du beskjed om — de
+   forsvinner ikke i stillhet. Er vaktplanen et bilde eller skjermbilde, bruk **Les dokument**.
 3. **Lønnsslipper** — linjene slik de står på slippen, med timer, sats og beløp.
 4. **Sjekk** — oversikt, funn med bevis, og uke for uke.
 
@@ -76,17 +78,31 @@ opplysningene selv, og resultatet blir like riktig, fordi det er vanlig kode som
 
 ## Hva sjekkes?
 
-| Hva | Grunnlag |
-| --- | --- |
-| Får du timene stillingsprosenten din gir deg — per uke, måned og hele perioden? | Kontrakten din |
-| Er overtid betalt med minst 40 % tillegg? | Arbeidsmiljøloven § 10-4 og § 10-6 |
-| Er **merarbeid** skilt fra overtid, slik loven gjør? | Arbeidsmiljøloven § 14-4 a |
-| Har du hatt 11 timer fri mellom vaktene, og 35 timer i uka? | Arbeidsmiljøloven § 10-8 |
-| Er det registrert pause på de lange vaktene? | Arbeidsmiljøloven § 10-9 |
-| Er hver time du jobbet betalt, i riktig kategori og med riktig sats? | Kontrakten din |
-| Er kvelds-, natt-, helge- og helligdagstillegg med? | **Kontrakten eller tariffavtalen din** |
-| Ser feriepengegrunnlaget riktig ut? | Ferieloven § 10 |
-| Har du jobbet så mye at du kan ha rett til større stilling? | Arbeidsmiljøloven § 14-4 a |
+**Kontrakten din er utgangspunktet for alle reglene.** Står det andre grenser i arbeidsavtalen
+eller tariffavtalen enn i loven, er det dine vilkår vi måler mot — og hvert funn viser om tallet
+kom fra kontrakten eller fra loven. Loven brukes der kontrakten ikke sier noe, og som gulv der
+den ikke kan fravikes.
+
+| Hva | Hentes fra kontrakten | Loven hvis kontrakten er taus |
+| --- | --- | --- |
+| Timene stillingsprosenten din gir deg — per uke, måned og hele perioden | stillingsprosent, timetall, timelønn | — |
+| Overtidstillegg | avtalt sats (ofte 50 % eller 100 %) | minst 40 % (AML § 10-6) |
+| Når overtid begynner | avtalt arbeidstid per døgn og uke | 9 t og 40 t (AML § 10-4) |
+| Hvor mye overtid som er lov | avtalt maksgrense | 10 t / 25 t / 200 t (AML § 10-6) |
+| **Merarbeid** skilt fra overtid | avtalt arbeidstid | AML § 14-4 a |
+| Arbeidsfri mellom vaktene | avtalt fri per døgn og uke | 11 t og 35 t (AML § 10-8) |
+| Pauser, og om pausen er betalt | avtalt pausetid og betalt pause | 5,5 t / 30 min (AML § 10-9) |
+| Hver time betalt, riktig kategori og sats | avtalt timelønn | — |
+| Kvelds-, natt-, helge- og helligdagstillegg | **bare kontrakten eller tariffavtalen** | loven gir ingen slike tillegg |
+| Feriepenger | avtalt sats | minst 10,2 % (ferieloven § 10) |
+| Rett til større stilling | avtalt periode | tolv måneder (AML § 14-4 a) |
+
+Legg inn dine egne vilkår under **Kontrakt → «Avtalte vilkår som avviker fra loven»**. Feltene
+du lar stå tomme, betyr «kontrakten sier ingenting», og da gjelder loven.
+
+Er et vilkår i kontrakten dårligere enn loven tillater — for eksempel 25 % overtidstillegg, 6
+timers arbeidsfri eller feriepenger under 10,2 % — regner vi med lovens krav og sier fra om det
+som et eget funn. Et slikt vilkår i en arbeidsavtale er ikke gyldig.
 
 Hvert funn får ett av tre nivåer:
 
@@ -152,6 +168,8 @@ Dokumentene dine er blant de mest sensitive du har: fødselsnummer, kontonummer 
   fordi den *kan* maskeres.
 - **Uten API-nøkkel går ingenting ut av maskinen.** Da er det bare din egen nettleser og din
   egen disk.
+- **Opplasting av vaktplan går aldri ut av maskinen.** CSV, tekst og PDF leses lokalt, uten
+  API-nøkkel og uten nettverk.
 - **«Slett alt»** under Innstillinger sletter kontrakt, vakter, lønnsslipper og dokumenter. Det
   finnes ingen kopi noe annet sted.
 
@@ -170,6 +188,7 @@ Dokumentene dine er blant de mest sensitive du har: fødselsnummer, kontonummer 
 
 ```
 src/domain/      ren forretningslogikk uten I/O: skjemaer, øre-aritmetikk, tid, regler, motor
+src/domain/thresholds.ts  hvor hver terskel kommer fra: kontrakten først, loven som gulv
 src/domain/rules/ én fil per regel, hver en ren funksjon fra data til funn
 src/privacy/     maskering av fødselsnummer, kontonummer og kortnummer
 src/extraction/  lesing av dokumenter: PDF-tekst, ledetekster, validering, Claude-kall

@@ -134,7 +134,7 @@ describe('fra uthentede felt til datamodellen', () => {
   it('beholder det brukeren alt har når et felt mangler', () => {
     const existing = contractFixture({ employer: 'Gammel arbeidsgiver AS', stillingsprosent: 40 });
     const { contract } = contractFromExtraction(
-      {
+      ExtractedContract.parse({
         employer: null,
         employeeName: null,
         startDate: null,
@@ -146,7 +146,7 @@ describe('fra uthentede felt til datamodellen', () => {
         tariffavtale: null,
         supplements: [],
         notes: [],
-      },
+      }),
       existing,
       37.5,
       null,
@@ -154,6 +154,50 @@ describe('fra uthentede felt til datamodellen', () => {
     expect(contract.employer).toBe('Gammel arbeidsgiver AS');
     expect(contract.stillingsprosent).toBe(40);
     expect(contract.wage.amountOre).toBe(existing.wage.amountOre);
+  });
+
+  it('tar med avtalte vilkår som avviker fra loven', async () => {
+    const send: Send = async () =>
+      JSON.stringify({
+        employer: 'Kafé Nordlys AS',
+        employeeName: null,
+        startDate: null,
+        stillingsprosent: 60,
+        fullTimeHoursPerWeek: 37.5,
+        contractedHoursPerWeek: null,
+        wageKind: 'hourly',
+        wageKroner: 198.5,
+        tariffavtale: 'Eksempeltariff',
+        averagingAgreement: true,
+        overtimeSupplementPercent: 50,
+        agreedDailyRestHours: 9,
+        minBreakMinutesLongDay: 45,
+        paidBreak: true,
+        feriepengerRatePercent: 12,
+        supplements: [],
+        notes: [],
+      });
+    const outcome = await extractStructured({ kind: 'kontrakt', text: 'noe', schema: ExtractedContract, send });
+    const { contract } = contractFromExtraction(outcome.data, null, 37.5, null);
+    expect(contract.overtimeSupplementPercent).toBe(50);
+    expect(contract.agreedDailyRestHours).toBe(9);
+    expect(contract.minBreakMinutesLongDay).toBe(45);
+    expect(contract.paidBreak).toBe(true);
+    expect(contract.feriepengerRatePercent).toBe(12);
+    expect(contract.averagingAgreement).toBe(true);
+  });
+
+  it('lar avtalte vilkår stå åpne når dokumentet ikke nevner dem', async () => {
+    // Et dokument som ikke sier noe om overtid skal ikke koste et nytt forsøk, og skal ikke
+    // få lovens verdi stemplet inn som om den sto i kontrakten.
+    const send: Send = async () => VALID_CONTRACT_JSON;
+    const outcome = await extractStructured({ kind: 'kontrakt', text: 'noe', schema: ExtractedContract, send });
+    expect(outcome.attempts).toBe(1);
+    expect(outcome.data.overtimeSupplementPercent).toBeNull();
+    const { contract } = contractFromExtraction(outcome.data, null, 37.5, null);
+    expect(contract.overtimeSupplementPercent).toBeNull();
+    expect(contract.feriepengerRatePercent).toBeNull();
+    expect(contract.paidBreak).toBe(false);
   });
 
   it('gjør lønnsslippen om til øre', () => {

@@ -81,19 +81,26 @@ describe('demoen', () => {
     expect(flag.evidence.find((e) => e.label === 'Betalt i perioden')!.value).toBe('92,0 t');
   });
 
-  it('krever overtidstillegg for den 11 timer lange onsdagen: 2,0 t × 198,50 kr × 40 % = 158,80 kr', () => {
+  it('krever overtidstillegg for den 11 timer lange onsdagen: 2,0 t × 198,50 kr × 50 % = 198,50 kr', () => {
+    // Kontrakten i demoen har tariffavtalt 50 % overtidstillegg, ikke lovens minimum på 40 %,
+    // og regelen skal bruke kontraktens sats og si hvor den kom fra.
     const flag = byId.get('overtime:demo-slipp-2026-07')!;
-    expect(flag.amountOre).toBe(15_880);
-    expect(flag.calculation!.expression).toBe('2,0 t × 198,50 kr × 40 % = 158,80 kr');
+    expect(flag.amountOre).toBe(19_850);
+    expect(flag.calculation!.expression).toBe('2,0 t × 198,50 kr × 50 % = 198,50 kr');
     expect(flag.evidence.some((e) => e.value.includes('11,0 t jobbet'))).toBe(true);
+    expect(flag.evidence.find((e) => e.label === 'Tillegg')!.value).toBe('50 % (fra kontrakten din)');
+    expect(flag.message).toContain('fra kontrakten din');
   });
 
-  it('krever overtidstillegg for stenge- og åpnevakta i juni: 4,5 t × 198,50 kr × 40 % = 357,30 kr', () => {
+  it('krever overtidstillegg for stenge- og åpnevakta i juni: 4,5 t × 198,50 kr × 50 % = 446,63 kr', () => {
     // Fredag 19. juni 15:00–23:00 (8 t) og lørdag 20. juni 07:00–13:00 (5,5 t) med bare
     // 8 timer fri mellom: 13,5 t i samme arbeidsdøgn, altså 4,5 t over grensen på 9 t.
     const flag = byId.get('overtime:demo-slipp-2026-06')!;
-    expect(flag.amountOre).toBe(35_730);
-    expect(flag.calculation!.expression).toBe('4,5 t × 198,50 kr × 40 % = 357,30 kr');
+    expect(flag.amountOre).toBe(44_663);
+    expect(flag.calculation!.expression).toBe('4,5 t × 198,50 kr × 50 % = 446,63 kr');
+    expect(flag.evidence.find((e) => e.label === 'Grense per arbeidsdøgn')!.value).toBe(
+      '9,0 t (arbeidsmiljøloven § 10-4)',
+    );
   });
 
   it('flagger uke 28 under stillingsprosenten: 7,5 t × 198,50 kr = 1 488,75 kr', () => {
@@ -134,8 +141,8 @@ describe('demoen', () => {
   });
 
   it('summerer kravene riktig, og holder de tre summene atskilt', () => {
-    // 1 985,00 + 1 825,00 + 1 485,00 + 496,25 + 357,30 + 158,80 = 6 307,35 kr
-    expect(formatKr(result.totals.estimatedOwedOre)).toBe('6 307,35 kr');
+    // 1 985,00 + 1 825,00 + 1 485,00 + 496,25 + 446,63 + 198,50 = 6 436,38 kr
+    expect(formatKr(result.totals.estimatedOwedOre)).toBe('6 436,38 kr');
     expect(formatKr(result.totals.underScheduledOre)).toBe('1 488,75 kr');
     expect(formatKr(result.totals.feriepengerToCheckOre)).toBe('630,00 kr');
     expect(formatHours(result.totals.hoursShortVsContract)).toBe('7,5 t');

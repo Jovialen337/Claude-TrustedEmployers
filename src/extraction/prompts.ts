@@ -31,7 +31,18 @@ tidsrom og sats.
 
 For hvert tillegg: skriv i "source" hvor i dokumentet det står, for eksempel
 "Arbeidskontrakt pkt. 6". Er satsen i kroner per time, bruk rateKroner. Er den i prosent av
-timelønn, bruk ratePercent. Bruk bare én av dem.`,
+timelønn, bruk ratePercent. Bruk bare én av dem.
+
+Se også etter vilkår som avviker fra loven, og ta dem med BARE hvis de står i dokumentet:
+- overtidstillegg i prosent (mange avtaler gir 50 % eller 100 %, loven krever minst 40 %)
+- avtalt alminnelig arbeidstid per døgn og per uke
+- om det er avtalt gjennomsnittsberegning av arbeidstiden
+- avtalt arbeidsfri per døgn og per uke (loven: 11 og 35 timer)
+- når det gis pause, hvor lang den er, og om pausen er betalt (regnes som arbeidstid)
+- feriepengesats i prosent (10,2 % er lovens minimum, 12 % ved fem ukers ferie)
+
+Står ingenting om et av disse punktene, skal feltet være null. Ikke fyll inn lovens verdi —
+appen gjør det selv, og skiller mellom «dette står i kontrakten» og «dette følger av loven».`,
 
   lonnsslipp: `Dokumentet er en lønnsslipp.
 
@@ -67,6 +78,11 @@ export function schemaHint(kind: ExtractionKind): string {
       return `{"employer": string|null, "employeeName": string|null, "startDate": "YYYY-MM-DD"|null,
 "stillingsprosent": number|null, "fullTimeHoursPerWeek": number|null, "contractedHoursPerWeek": number|null,
 "wageKind": "hourly"|"monthly"|null, "wageKroner": number|null, "tariffavtale": string|null,
+"averagingAgreement": boolean|null, "overtimeSupplementPercent": number|null,
+"normalDailyLimitHours": number|null, "normalWeeklyLimitHours": number|null,
+"agreedDailyRestHours": number|null, "agreedWeeklyRestHours": number|null,
+"breakRequiredAfterHours": number|null, "minBreakMinutesLongDay": number|null,
+"paidBreak": boolean|null, "feriepengerRatePercent": number|null,
 "supplements": [{"label": string, "kind": "kveld"|"natt"|"helg"|"helligdag", "fromTime": "HH:MM"|null,
 "toTime": "HH:MM"|null, "rateKroner": number|null, "ratePercent": number|null, "source": string|null}],
 "notes": string[]}`;

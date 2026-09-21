@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contractedHoursPerWeek, effectiveHourlyRateOre, normalDailyLimitHours, normalWeeklyLimitHours } from '@/domain/derive';
-import type { Contract } from '@/domain/schemas';
+import { NO_AGREED_TERMS, type Contract } from '@/domain/schemas';
 
 const base: Contract = {
   id: 'c1',
@@ -14,9 +14,7 @@ const base: Contract = {
   wage: { kind: 'hourly', amountOre: 19850 },
   tariffavtale: null,
   averagingAgreement: false,
-  normalDailyLimitHours: null,
-  normalWeeklyLimitHours: null,
-  feriepengerRatePercent: 10.2,
+  ...NO_AGREED_TERMS,
   supplements: [],
   documentRef: null,
 };

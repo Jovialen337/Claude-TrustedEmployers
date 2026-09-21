@@ -6,7 +6,7 @@
  * same result, which is what lets the demo be asserted to the øre in a unit test.
  */
 import { effectiveShifts, monthBuckets, payslipSummary, plannedShifts, segmentsOf, weekBuckets } from './aggregate';
-import { contractedHoursPerWeek, effectiveHourlyRateOre } from './derive';
+import { applyPaidBreak, contractedHoursPerWeek, effectiveHourlyRateOre } from './derive';
 import { applyOverrides, DEFAULT_RULESET } from './ruleset';
 import { actualHoursVsContract } from './rules/actualHours';
 import { breaks } from './rules/breaks';
@@ -114,19 +114,23 @@ export function runCheck(workspace: Workspace, options: RunCheckOptions = {}): C
   }
 
   const dataRange = dataRangeOf(workspace);
+  // Hours are counted from these: identical to the stored shifts unless the contract says
+  // breaks are paid, in which case the break is working time.
+  const workTimeShifts = applyPaidBreak(contract, workspace.shifts);
   // Buckets span the whole data range, so a week or month with no shifts at all is still
   // visible instead of silently missing.
-  const weeks = weekBuckets(workspace.shifts, dataRange);
-  const months = monthBuckets(workspace.shifts, dataRange);
+  const weeks = weekBuckets(workTimeShifts, dataRange);
+  const months = monthBuckets(workTimeShifts, dataRange);
   const contractedWeeklyHours = contractedHoursPerWeek(contract);
   const hourlyRateOre = effectiveHourlyRateOre(contract);
 
   const baseContext: Omit<RuleContext, 'rule'> = {
     contract,
     shifts: workspace.shifts,
+    workTimeShifts,
     payslips: workspace.payslips,
-    effective: segmentsOf(effectiveShifts(workspace.shifts)),
-    planned: segmentsOf(plannedShifts(workspace.shifts)),
+    effective: segmentsOf(effectiveShifts(workTimeShifts)),
+    planned: segmentsOf(plannedShifts(workTimeShifts)),
     weeks,
     months,
     summaries: [...workspace.payslips]

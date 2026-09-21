@@ -21,11 +21,11 @@ describe('utkast til melding', () => {
   it('tar med hvert sannsynlige feil med regnestykke og paragraf', () => {
     expect(message).toContain('Helligdagstillegg mangler');
     expect(message).toContain('10,0 t × 198,50 kr × 100 % = 1 985,00 kr − 0,00 kr betalt = 1 985,00 kr');
-    expect(message).toContain('2,0 t × 198,50 kr × 40 % = 158,80 kr');
+    expect(message).toContain('2,0 t × 198,50 kr × 50 % = 198,50 kr');
     expect(message).toContain('Grunnlag: Arbeidsmiljøloven § 10-4');
     // Et kontraktspunkt skal ikke leses som en paragraf.
     expect(message).toContain('Grunnlag: Arbeidsavtalen eller tariffavtalen, Avtalte tillegg');
-    expect(message).toContain('6 307,35 kr');
+    expect(message).toContain('6 436,38 kr');
   });
 
   it('skiller spørsmål fra krav', () => {

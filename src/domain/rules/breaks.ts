@@ -9,20 +9,60 @@ import { effectiveShifts } from '../aggregate';
 import { formatHours } from '../money';
 import type { Flag } from '../schemas';
 import { doegnGroups, formatDateLong } from '../time';
-import { buildFlag, ev, numberParam, refsFromShifts } from './helpers';
+import {
+  breakRequiredAfterHours as resolveBreakRequiredAfter,
+  longDayHours as resolveLongDay,
+  minBreakMinutesLongDay as resolveMinBreak,
+  withSource,
+} from '../thresholds';
+import { buildFlag, contractRef, ev, numberParam, refsFromShifts } from './helpers';
 import type { RuleContext, RuleFn } from './types';
 
 export const breaks: RuleFn = (context: RuleContext): Flag[] => {
   const flags: Flag[] = [];
-  const requiredAfter = numberParam(context.rule, 'break_required_after_hours', 5.5);
-  const longDay = numberParam(context.rule, 'long_day_hours', 8);
-  const minLongDayBreak = numberParam(context.rule, 'min_total_break_minutes_long_day', 30);
-
+  const requiredAfterThreshold = resolveBreakRequiredAfter(context.contract, context.rule);
+  const longDayThreshold = resolveLongDay(context.contract, context.rule);
+  const minBreakThreshold = resolveMinBreak(context.contract, context.rule);
+  const requiredAfter = requiredAfterThreshold.value;
+  const longDay = longDayThreshold.value;
+  const minLongDayBreak = minBreakThreshold.value;
   const newPeriodAfterRestHours = numberParam(context.rule, 'new_period_after_rest_hours', 11);
 
-  for (const group of doegnGroups(effectiveShifts(context.shifts), { newPeriodAfterRestHours })) {
+  /* ------------- kontraktsvilkår som er dårligere enn loven tillater */
+  for (const threshold of [requiredAfterThreshold, longDayThreshold, minBreakThreshold]) {
+    if (!threshold.belowStatutory || !context.dataRange) continue;
+    flags.push(
+      buildFlag(context, {
+        key: `avtale-darligere-enn-loven:${threshold.belowStatutory.contractValue}:${threshold.belowStatutory.statutory}`,
+        severity: 'bor_sjekkes',
+        title: 'Kontrakten gir dårligere pauserett enn loven',
+        periodLabel: 'Hele perioden',
+        periodStart: context.dataRange.start,
+        periodEnd: context.dataRange.end,
+        message:
+          `Kontrakten din setter en pausegrense på ${threshold.belowStatutory.contractValue}, der loven ` +
+          `krever ${threshold.belowStatutory.statutory}. Et dårligere vilkår i en arbeidsavtale er ikke ` +
+          `gyldig, så vi har regnet med lovens krav.`,
+        evidence: [
+          ev('Avtalt i kontrakten', String(threshold.belowStatutory.contractValue)),
+          ev('Lovens krav', String(threshold.belowStatutory.statutory)),
+        ],
+        amountOre: null,
+        documentRefs: contractRef(context),
+      }),
+    );
+  }
+
+  // Hours come from the paid-break view (a paid break is working time); the registered break
+  // itself is read from the original records, so a missing break is still visible.
+  const registeredBreakById = new Map(context.shifts.map((shift) => [shift.id, shift.breakMinutes]));
+
+  for (const group of doegnGroups(effectiveShifts(context.workTimeShifts), { newPeriodAfterRestHours })) {
     const workedHours = group.workedMinutes / 60;
-    const breakMinutes = group.shifts.reduce((sum, shift) => sum + shift.breakMinutes, 0);
+    const breakMinutes = group.shifts.reduce(
+      (sum, shift) => sum + (registeredBreakById.get(shift.id) ?? shift.breakMinutes),
+      0,
+    );
     const times = group.shifts.map((shift) => `${shift.start}–${shift.end}`).join(', ');
 
     const noBreakAtAll = workedHours > requiredAfter && breakMinutes === 0;
@@ -50,9 +90,10 @@ export const breaks: RuleFn = (context: RuleContext): Flag[] => {
           ev('Vakt', times),
           ev('Arbeidstid', formatHours(workedHours)),
           ev('Registrert pause', `${breakMinutes} minutter`),
-          ev('Lovens krav', noBreakAtAll
-            ? `Minst én pause når dagen er over ${formatHours(requiredAfter)}`
-            : `Minst ${minLongDayBreak} minutter når dagen er minst ${formatHours(longDay)}`),
+          ev('Kravet vi måler mot', noBreakAtAll
+            ? withSource(`Minst én pause når dagen er over ${formatHours(requiredAfter)}`, requiredAfterThreshold)
+            : withSource(`Minst ${minLongDayBreak} minutter når dagen er minst ${formatHours(longDay)}`, minBreakThreshold)),
+          ev('Pausen er betalt', context.contract.paidBreak ? 'Ja, den regnes som arbeidstid' : 'Nei'),
         ],
         amountOre: null,
         documentRefs: refsFromShifts(group.shifts),

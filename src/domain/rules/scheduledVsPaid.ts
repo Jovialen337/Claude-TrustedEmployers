@@ -66,7 +66,10 @@ export const scheduledVsPaid: RuleFn = (context: RuleContext): Flag[] => {
               ev('Jobbet i perioden', formatHours(worked)),
               ev('Betalt i perioden', formatHours(paid)),
               ev('Differanse', formatHours(missing)),
-              ev('Timelønn', formatKr(rate)),
+              ev('Timelønn', `${formatKr(rate)} (fra kontrakten din)`),
+              ...(context.contract.paidBreak
+                ? [ev('Pauser', 'Kontrakten sier at pausene er betalt, så de er regnet som arbeidstid.')]
+                : []),
               ...weekRows,
               ...paidRows,
             ],

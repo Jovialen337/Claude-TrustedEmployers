@@ -10,6 +10,7 @@
 import { formatHours, formatPercent, roundHours } from '../money';
 import type { Flag } from '../schemas';
 import { addDays } from '../time';
+import { largerPositionLookbackMonths, withSource } from '../thresholds';
 import { buildFlag, contractRef, ev, isComplete, numberParam } from './helpers';
 import type { RuleContext, RuleFn } from './types';
 
@@ -22,7 +23,9 @@ export const actualHoursVsContract: RuleFn = (context: RuleContext): Flag[] => {
 
   const minWeeks = numberParam(context.rule, 'min_weeks_observed', 12);
   const tolerancePercent = numberParam(context.rule, 'excess_tolerance_percent', 5);
-  const lookbackMonths = numberParam(context.rule, 'lookback_months', 12);
+  // A tariff agreement may give the right after a shorter period than the law's twelve months.
+  const lookback = largerPositionLookbackMonths(context.contract, context.rule);
+  const lookbackMonths = lookback.value;
 
   const cutoff = addDays(range.end, -Math.round(lookbackMonths * 30.44));
   const weeks = context.weeks.filter((week) => isComplete(week, range) && week.start >= cutoff);
@@ -61,6 +64,7 @@ export const actualHoursVsContract: RuleFn = (context: RuleContext): Flag[] => {
         ev('Tilsvarer stilling', formatPercent(suggestedPercent)),
         ev('Hele uker vi har sett på', String(weeks.length)),
         ev('Uker over avtalt tid', String(weeksAbove)),
+        ev('Perioden som teller', withSource(`${lookbackMonths} måneder`, lookback)),
       ],
       amountOre: null,
       documentRefs: contractRef(context),

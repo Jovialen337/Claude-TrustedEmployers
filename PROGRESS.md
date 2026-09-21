@@ -59,3 +59,20 @@ from the first unticked box. Do not start over.
 - Gjennomsnittsberegning of working time (AML § 10-5) beyond storing the flag and letting the
   user override the daily/weekly limits.
 - Attributing paid hours to individual weeks — deliberately refused, see DECISIONS.md.
+
+## Follow-up round (requested after the first push)
+
+- [x] 13. Work schedule can be uploaded as a file, parsed locally without an API key, with a
+      confirm-before-save preview
+- [x] 14. Every rule takes its thresholds from the contract first, with the law as fallback and
+      as a floor; each flag shows where its threshold came from
+- [x] 15. A contract term weaker than the law is raised to the law and reported as its own finding
+- [x] 16. Paid breaks count as working time; extraction reads the agreed terms
+
+- 2026-09-21 — Follow-up done: thresholds.ts (contract-first provenance for all eight rules),
+  agreed-terms UI on the contract page, /api/import-schedule for local schedule uploads,
+  extraction of agreed terms, paid-break handling. 192 tests pass, clean build, flow driven in a
+  real browser (contract with a 50 % tariff supplement + paid break, then a CSV upload).
+  Two bugs found by running it: the agreed-terms validation compared form keys with contract
+  keys and rejected every blank field, and the feriepenger rule's early return discarded a
+  finding it had already collected.

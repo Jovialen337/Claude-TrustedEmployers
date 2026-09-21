@@ -9,7 +9,14 @@ import type { Contract, DateStr, Flag, Payslip, Rule, Shift } from '../schemas';
 
 export interface RuleContext {
   contract: Contract;
+  /** The shifts exactly as recorded, including each registered break. */
   shifts: Shift[];
+  /**
+   * The shifts as they count towards working time: the same records, except that a paid
+   * break (per the contract) has been folded into the hours. Rules that measure working time
+   * use these; the breaks rule uses `shifts` so it can still see the registered break.
+   */
+  workTimeShifts: Shift[];
   payslips: Payslip[];
   /** The rule being run, with the user's overrides already applied. */
   rule: Rule;

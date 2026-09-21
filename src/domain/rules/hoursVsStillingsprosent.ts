@@ -63,7 +63,7 @@ export const hoursVsStillingsprosent: RuleFn = (context: RuleContext): Flag[] =>
           ev('Planlagt denne uka', formatHours(week.plannedHours)),
           ev('Timer som gjelder', formatHours(week.workedHours)),
           ev('Differanse', formatHours(short)),
-          ev('Timelønn', formatKr(rate)),
+          ev('Timelønn', `${formatKr(rate)} (fra kontrakten din)`),
         ],
         calculation,
         amountOre: calculation.resultOre,

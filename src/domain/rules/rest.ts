@@ -16,15 +16,49 @@ import {
   shiftStartInstant,
   toEpochDay,
 } from '../time';
-import { buildFlag, ev, isComplete, numberParam, refsFromShifts } from './helpers';
+import { dailyRest, weeklyRest, withSource } from '../thresholds';
+import { buildFlag, contractRef, ev, isComplete, numberParam, refsFromShifts } from './helpers';
 import type { RuleContext, RuleFn } from './types';
 
 export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
   const flags: Flag[] = [];
-  const minDaily = numberParam(context.rule, 'min_daily_rest_hours', 11);
+  // The contract governs, down to the floor the law does not let an agreement pass.
+  const daily = dailyRest(context.contract, context.rule);
+  const weekly = weeklyRest(context.contract, context.rule);
+  const minDaily = daily.value;
+  const minWeekly = weekly.value;
   const minDailyAgreed = numberParam(context.rule, 'min_daily_rest_hours_by_agreement', 8);
-  const minWeekly = numberParam(context.rule, 'min_weekly_rest_hours', 35);
   const minWeeklyAgreed = numberParam(context.rule, 'min_weekly_rest_hours_by_agreement', 28);
+
+  for (const [threshold, what, floor] of [
+    [daily, 'daglig', minDailyAgreed],
+    [weekly, 'ukentlig', minWeeklyAgreed],
+  ] as const) {
+    if (!threshold.belowStatutory) continue;
+    const span = context.dataRange;
+    if (!span) continue;
+    flags.push(
+      buildFlag(context, {
+        key: `avtale-under-lovens-gulv:${what}`,
+        severity: 'bor_sjekkes',
+        title: `Kontrakten avtaler kortere ${what} arbeidsfri enn loven tillater`,
+        periodLabel: 'Hele perioden',
+        periodStart: span.start,
+        periodEnd: span.end,
+        message:
+          `Kontrakten din oppgir ${formatHours(threshold.belowStatutory.contractValue)} ${what} arbeidsfri. ` +
+          `Selv en skriftlig avtale med tillitsvalgte kan ikke gå under ${formatHours(floor)}, så vi har ` +
+          `regnet med ${formatHours(floor)}. Dette bør du ta opp uansett hva vaktene viser.`,
+        evidence: [
+          ev('Avtalt i kontrakten', formatHours(threshold.belowStatutory.contractValue)),
+          ev('Lovens nedre grense ved avtale', formatHours(floor)),
+          ev('Brukt i utregningene', formatHours(threshold.value)),
+        ],
+        amountOre: null,
+        documentRefs: contractRef(context),
+      }),
+    );
+  }
 
   const shifts: Shift[] = [...effectiveShifts(context.shifts)].sort(
     (a, b) => shiftStartInstant(a) - shiftStartInstant(b),
@@ -48,7 +82,8 @@ export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
         periodStart: previous.date,
         periodEnd: next.date,
         message:
-          `Du skal ha minst ${formatHours(minDaily)} sammenhengende fri i løpet av 24 timer. ` +
+          `Du skal ha minst ${formatHours(minDaily)} sammenhengende fri i løpet av 24 timer ` +
+          `(${daily.label}). ` +
           `Mellom vakta som slutter ${formatTime(shiftEndInstant(previous) % MINUTES_PER_DAY)} og vakta som ` +
           `starter ${next.start} er det ${formatHours(restHours)}. ` +
           (restHours < minDailyAgreed
@@ -59,7 +94,7 @@ export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
           ev('Vakt før', `${formatDateLong(previous.date)} ${previous.start}–${previous.end}`),
           ev('Vakt etter', `${formatDateLong(next.date)} ${next.start}–${next.end}`),
           ev('Fri mellom vaktene', formatHours(restHours)),
-          ev('Lovens krav', formatHours(minDaily)),
+          ev('Kravet vi måler mot', withSource(formatHours(minDaily), daily)),
         ],
         amountOre: null,
         documentRefs: refsFromShifts([previous, next]),
@@ -146,7 +181,7 @@ export const restPeriods: RuleFn = (context: RuleContext): Flag[] => {
         evidence: [
           ev('Lengste friperiode i uka', formatHours(gapHours)),
           ev('Lengste friperiode som berører uka', straddling > 0 ? formatHours(roundHours(straddling)) : 'Ingen funnet'),
-          ev('Lovens krav', formatHours(minWeekly)),
+          ev('Kravet vi måler mot', withSource(formatHours(minWeekly), weekly)),
           ev('Laveste ved avtale', formatHours(minWeeklyAgreed)),
           ev('Vakter denne uka', String(inside.length)),
         ],

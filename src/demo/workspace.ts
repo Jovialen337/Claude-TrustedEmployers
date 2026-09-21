@@ -23,7 +23,14 @@
  *   7. juli  — week 28 cut to 15 t, well under the 60 % stillingsprosent
  *   8. juli  — feriepenger: 6 000,00 kr set aside on a stated basis of 65 000,00 kr
  */
-import { Workspace, type Contract, type Payslip, type PayslipLine, type StoredDocument } from '../domain/schemas';
+import {
+  NO_AGREED_TERMS,
+  Workspace,
+  type Contract,
+  type Payslip,
+  type PayslipLine,
+  type StoredDocument,
+} from '../domain/schemas';
 import { demoShifts, VAKTPLAN_DOC_ID } from './shifts';
 
 export const DEMO_HOURLY_RATE_ORE = 19850; // 198,50 kr
@@ -65,8 +72,10 @@ export function demoContract(): Contract {
     wage: { kind: 'hourly', amountOre: DEMO_HOURLY_RATE_ORE },
     tariffavtale: 'Eksempeltariff (demodata — ikke en virkelig avtale)',
     averagingAgreement: false,
-    normalDailyLimitHours: null,
-    normalWeeklyLimitHours: null,
+    ...NO_AGREED_TERMS,
+    // Tariffen i demoen gir 50 % overtidstillegg, ikke lovens minimum på 40 %. Reglene skal
+    // bruke kontraktens sats, og vise at den kom derfra.
+    overtimeSupplementPercent: 50,
     feriepengerRatePercent: 10.2,
     supplements: [
       {

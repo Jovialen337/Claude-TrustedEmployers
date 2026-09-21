@@ -130,6 +130,7 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
             ev('På lønnsslippen', formatKr(paid)),
             ev('Differanse', formatKr(missing)),
             ev('Kilde til satsen', group.map((s) => s.source).join('; ')),
+            ev('Hvor satsen kommer fra', 'Kontrakten eller tariffavtalen din — ikke arbeidsmiljøloven'),
           ],
           calculation: {
             // Show the working when there is one supplement of this kind; with several,

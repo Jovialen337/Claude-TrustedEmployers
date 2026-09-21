@@ -2,7 +2,7 @@
  * Values derived from the contract. Kept in one place so that every rule agrees on what
  * "contracted hours" and "your hourly rate" mean.
  */
-import type { Contract, RuleParams } from './schemas';
+import type { Contract, RuleParams, Shift } from './schemas';
 
 /** Contracted weekly hours: the explicit figure if the contract states one, else stillingsprosent × full time. */
 export function contractedHoursPerWeek(contract: Contract): number {
@@ -33,6 +33,17 @@ export function effectiveHourlyRateOre(contract: Contract): number {
 export function hourlyRateExplanation(contract: Contract): string {
   if (contract.wage.kind === 'hourly') return 'Timelønn fra kontrakten.';
   return `Månedslønn × 12 / (${contractedHoursPerWeek(contract)} t/uke × 52 uker)`;
+}
+
+/**
+ * When the contract says the break is paid, it counts as working time (which is also what
+ * AML § 10-9 says when the worker cannot leave the workplace). Hours are then computed from
+ * the full shift. The registered break is kept on the original shift record, so the breaks
+ * rule can still see whether a break was actually taken.
+ */
+export function applyPaidBreak(contract: Contract, shifts: readonly Shift[]): Shift[] {
+  if (!contract.paidBreak) return [...shifts];
+  return shifts.map((shift) => (shift.breakMinutes === 0 ? shift : { ...shift, breakMinutes: 0 }));
 }
 
 function numberParam(params: RuleParams, key: string, fallback: number): number {

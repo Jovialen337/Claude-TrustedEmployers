@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { describeInvalidTerms, parseAgreedTerms } from '@/domain/agreedTerms';
 import { contractedHoursPerWeek, effectiveHourlyRateOre } from '@/domain/derive';
 import { formatHours, formatKr, parseHoursInput, parseKrInput } from '@/domain/money';
 import { Contract, type Supplement, type SupplementKind, type Workspace } from '@/domain/schemas';
@@ -28,6 +29,18 @@ interface FormState {
   feriepenger: string;
   averagingAgreement: boolean;
   supplements: Supplement[];
+
+  /* Avtalte vilkår. Tom streng = «står ikke i kontrakten» = loven gjelder. */
+  overtimeSupplementPercent: string;
+  normalDailyLimitHours: string;
+  normalWeeklyLimitHours: string;
+  maxOvertimeHoursPer7Days: string;
+  agreedDailyRestHours: string;
+  agreedWeeklyRestHours: string;
+  breakRequiredAfterHours: string;
+  minBreakMinutesLongDay: string;
+  paidBreak: boolean;
+  largerPositionLookbackMonths: string;
 }
 
 function emptyForm(): FormState {
@@ -41,10 +54,25 @@ function emptyForm(): FormState {
     wageKind: 'hourly',
     wage: '',
     tariffavtale: '',
-    feriepenger: '10,2',
+    feriepenger: '',
     averagingAgreement: false,
     supplements: [],
+    overtimeSupplementPercent: '',
+    normalDailyLimitHours: '',
+    normalWeeklyLimitHours: '',
+    maxOvertimeHoursPer7Days: '',
+    agreedDailyRestHours: '',
+    agreedWeeklyRestHours: '',
+    breakRequiredAfterHours: '',
+    minBreakMinutesLongDay: '',
+    paidBreak: false,
+    largerPositionLookbackMonths: '',
   };
+}
+
+/** A number the contract may or may not state: empty string means it does not. */
+function optionalNumber(value: number | null): string {
+  return value === null ? '' : String(value).replace('.', ',');
 }
 
 function toForm(contract: Contract): FormState {
@@ -59,9 +87,19 @@ function toForm(contract: Contract): FormState {
     wageKind: contract.wage.kind,
     wage: (contract.wage.amountOre / 100).toFixed(2).replace('.', ','),
     tariffavtale: contract.tariffavtale ?? '',
-    feriepenger: String(contract.feriepengerRatePercent).replace('.', ','),
+    feriepenger: contract.feriepengerRatePercent === null ? '' : String(contract.feriepengerRatePercent).replace('.', ','),
     averagingAgreement: contract.averagingAgreement,
     supplements: contract.supplements,
+    overtimeSupplementPercent: optionalNumber(contract.overtimeSupplementPercent),
+    normalDailyLimitHours: optionalNumber(contract.normalDailyLimitHours),
+    normalWeeklyLimitHours: optionalNumber(contract.normalWeeklyLimitHours),
+    maxOvertimeHoursPer7Days: optionalNumber(contract.maxOvertimeHoursPer7Days),
+    agreedDailyRestHours: optionalNumber(contract.agreedDailyRestHours),
+    agreedWeeklyRestHours: optionalNumber(contract.agreedWeeklyRestHours),
+    breakRequiredAfterHours: optionalNumber(contract.breakRequiredAfterHours),
+    minBreakMinutesLongDay: optionalNumber(contract.minBreakMinutesLongDay),
+    paidBreak: contract.paidBreak,
+    largerPositionLookbackMonths: optionalNumber(contract.largerPositionLookbackMonths),
   };
 }
 
@@ -118,11 +156,28 @@ export default function KontraktPage() {
     const stillingsprosent = parseHoursInput(form.stillingsprosent);
     const fullTime = parseHoursInput(form.fullTimeHoursPerWeek);
     const wageOre = parseKrInput(form.wage);
-    const feriepenger = parseHoursInput(form.feriepenger);
     const contracted = form.contractedHoursPerWeek.trim() === '' ? null : parseHoursInput(form.contractedHoursPerWeek);
 
-    if (stillingsprosent === null || fullTime === null || wageOre === null || feriepenger === null) {
+    if (stillingsprosent === null || fullTime === null || wageOre === null) {
       setError('Sjekk tallene: bruk komma for desimaler, for eksempel 37,5 eller 198,50.');
+      return;
+    }
+
+    const { values: agreedValues, invalid } = parseAgreedTerms({
+      feriepengerRatePercent: form.feriepenger,
+      overtimeSupplementPercent: form.overtimeSupplementPercent,
+      normalDailyLimitHours: form.normalDailyLimitHours,
+      normalWeeklyLimitHours: form.normalWeeklyLimitHours,
+      maxOvertimeHoursPer7Days: form.maxOvertimeHoursPer7Days,
+      agreedDailyRestHours: form.agreedDailyRestHours,
+      agreedWeeklyRestHours: form.agreedWeeklyRestHours,
+      breakRequiredAfterHours: form.breakRequiredAfterHours,
+      minBreakMinutesLongDay: form.minBreakMinutesLongDay,
+      largerPositionLookbackMonths: form.largerPositionLookbackMonths,
+    });
+
+    if (invalid.length > 0) {
+      setError(describeInvalidTerms(invalid));
       return;
     }
 
@@ -138,9 +193,11 @@ export default function KontraktPage() {
       wage: { kind: form.wageKind, amountOre: wageOre },
       tariffavtale: form.tariffavtale.trim() === '' ? null : form.tariffavtale.trim(),
       averagingAgreement: form.averagingAgreement,
-      normalDailyLimitHours: workspace.contract?.normalDailyLimitHours ?? null,
-      normalWeeklyLimitHours: workspace.contract?.normalWeeklyLimitHours ?? null,
-      feriepengerRatePercent: feriepenger,
+      ...agreedValues,
+      maxOvertimeHoursPer4Weeks: workspace.contract?.maxOvertimeHoursPer4Weeks ?? null,
+      maxOvertimeHoursPer52Weeks: workspace.contract?.maxOvertimeHoursPer52Weeks ?? null,
+      longDayHours: workspace.contract?.longDayHours ?? null,
+      paidBreak: form.paidBreak,
       supplements: form.supplements,
       documentRef: workspace.contract?.documentRef ?? null,
     };
@@ -255,6 +312,7 @@ export default function KontraktPage() {
         <div className="grid2">
           <Field label="Feriepenger" help="10,2 % er lovens minimum. 12 % med avtale om fem uker ferie.">
             <select value={form.feriepenger} onChange={(e) => set('feriepenger', e.target.value)}>
+              <option value="">Står ikke i kontrakten (bruk lovens 10,2 %)</option>
               <option value="10,2">10,2 % (fire uker og én dag)</option>
               <option value="12">12 % (fem uker ferie)</option>
               <option value="12,5">12,5 % (over 60 år)</option>
@@ -277,6 +335,123 @@ export default function KontraktPage() {
           </Notice>
         ) : null}
       </div>
+
+      <h2>Avtalte vilkår som avviker fra loven</h2>
+      <p className="lead">
+        Reglene tar utgangspunkt i kontrakten din. Står det andre grenser i arbeidsavtalen eller
+        tariffavtalen enn i loven, legg dem inn her — da regner vi med dine vilkår, og hvert funn viser at
+        tallet kom fra kontrakten. <strong>La feltet stå tomt hvis kontrakten ikke sier noe</strong>, så
+        bruker vi loven. Vilkår som er dårligere enn loven tillater, sier vi fra om.
+      </p>
+
+      <details className="card">
+        <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+          Åpne avtalte vilkår (overtid, hviletid, pauser, feriepenger)
+        </summary>
+
+        <h3>Overtid</h3>
+        <div className="grid3">
+          <Field label="Overtidstillegg (%)" help="Loven krever minst 40 %. Mange tariffavtaler gir 50 % eller 100 %.">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.overtimeSupplementPercent}
+              onChange={(e) => set('overtimeSupplementPercent', e.target.value)}
+              placeholder="Tomt = lovens 40 %"
+            />
+          </Field>
+          <Field label="Alminnelig arbeidstid per døgn (t)" help="Lovens hovedregel er 9 t.">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.normalDailyLimitHours}
+              onChange={(e) => set('normalDailyLimitHours', e.target.value)}
+              placeholder="Tomt = 9 t"
+            />
+          </Field>
+          <Field label="Alminnelig arbeidstid per uke (t)" help="Lovens hovedregel er 40 t.">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.normalWeeklyLimitHours}
+              onChange={(e) => set('normalWeeklyLimitHours', e.target.value)}
+              placeholder="Tomt = 40 t"
+            />
+          </Field>
+        </div>
+        <Field label="Maks overtid per sju dager (t)" help="Lovens hovedregel er 10 t. Avtale med tillitsvalgte kan gi mer.">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={form.maxOvertimeHoursPer7Days}
+            onChange={(e) => set('maxOvertimeHoursPer7Days', e.target.value)}
+            placeholder="Tomt = 10 t"
+          />
+        </Field>
+
+        <h3>Arbeidsfri</h3>
+        <div className="grid2">
+          <Field label="Fri per døgn (t)" help="Loven: 11 t. Avtale kan gå ned til 8 t, ikke lavere.">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.agreedDailyRestHours}
+              onChange={(e) => set('agreedDailyRestHours', e.target.value)}
+              placeholder="Tomt = 11 t"
+            />
+          </Field>
+          <Field label="Fri per uke (t)" help="Loven: 35 t. Avtale kan gå ned til 28 t, ikke lavere.">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.agreedWeeklyRestHours}
+              onChange={(e) => set('agreedWeeklyRestHours', e.target.value)}
+              placeholder="Tomt = 35 t"
+            />
+          </Field>
+        </div>
+
+        <h3>Pauser</h3>
+        <div className="grid2">
+          <Field label="Pause etter (t)" help="Loven: pause når dagen er over 5,5 t. Kontrakten kan kreve pause tidligere.">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.breakRequiredAfterHours}
+              onChange={(e) => set('breakRequiredAfterHours', e.target.value)}
+              placeholder="Tomt = 5,5 t"
+            />
+          </Field>
+          <Field label="Minst pause på lang vakt (minutter)" help="Loven: 30 minutter når dagen er minst 8 t.">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={form.minBreakMinutesLongDay}
+              onChange={(e) => set('minBreakMinutesLongDay', e.target.value)}
+              placeholder="Tomt = 30 min"
+            />
+          </Field>
+        </div>
+        <Field label="Er pausen betalt?" help="Regnes pausen som arbeidstid, skal du ha lønn for den — og da teller den som timer.">
+          <div className="inline-choice">
+            <label>
+              <input type="checkbox" checked={form.paidBreak} onChange={(e) => set('paidBreak', e.target.checked)} />
+              Ja, pausen er betalt arbeidstid
+            </label>
+          </div>
+        </Field>
+
+        <h3>Rett til større stilling</h3>
+        <Field label="Perioden som teller (måneder)" help="Loven: tolv måneder. Tariffavtalen din kan gi retten tidligere.">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={form.largerPositionLookbackMonths}
+            onChange={(e) => set('largerPositionLookbackMonths', e.target.value)}
+            placeholder="Tomt = 12 måneder"
+          />
+        </Field>
+      </details>
 
       <h2>Tillegg fra kontrakt eller tariffavtale</h2>
       <p className="lead">

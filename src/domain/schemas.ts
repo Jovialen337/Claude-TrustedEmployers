@@ -64,6 +64,15 @@ export const Wage = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('monthly'), amountOre: Ore.nonnegative() }),
 ]);
 
+/**
+ * The contract is the primary source for every rule.
+ *
+ * Each field below that the law also speaks to is nullable: `null` means "the contract does
+ * not say", and only then does the statutory default from the ruleset apply. Where the law
+ * sets a floor the contract cannot go under (the 40 % overtime supplement, 8 hours of daily
+ * rest, a 30 minute break on a long day), a weaker contract term is raised to the floor and
+ * reported as its own finding — see derive.ts.
+ */
 export const Contract = z.object({
   id: z.string(),
   employer: z.string(),
@@ -76,9 +85,31 @@ export const Contract = z.object({
   wage: Wage,
   tariffavtale: z.string().nullable().default(null),
   averagingAgreement: z.boolean().default(false),
+
+  /* Avtalt arbeidstid og overtid (AML § 10-4, § 10-5, § 10-6) */
   normalDailyLimitHours: z.number().positive().nullable().default(null),
   normalWeeklyLimitHours: z.number().positive().nullable().default(null),
-  feriepengerRatePercent: z.number().nonnegative().default(10.2),
+  overtimeSupplementPercent: z.number().nonnegative().nullable().default(null),
+  maxOvertimeHoursPer7Days: z.number().nonnegative().nullable().default(null),
+  maxOvertimeHoursPer4Weeks: z.number().nonnegative().nullable().default(null),
+  maxOvertimeHoursPer52Weeks: z.number().nonnegative().nullable().default(null),
+
+  /* Avtalt arbeidsfri (AML § 10-8) */
+  agreedDailyRestHours: z.number().positive().nullable().default(null),
+  agreedWeeklyRestHours: z.number().positive().nullable().default(null),
+
+  /* Avtalte pauser (AML § 10-9) */
+  breakRequiredAfterHours: z.number().positive().nullable().default(null),
+  longDayHours: z.number().positive().nullable().default(null),
+  minBreakMinutesLongDay: z.number().nonnegative().nullable().default(null),
+  /** Regnes pausen som arbeidstid? Da teller den som timer du skal ha betalt for. */
+  paidBreak: z.boolean().default(false),
+
+  /* Rett til større stilling (AML § 14-4 a) */
+  largerPositionLookbackMonths: z.number().positive().nullable().default(null),
+
+  /** null = kontrakten sier ingenting, og ferielovens sats brukes. */
+  feriepengerRatePercent: z.number().nonnegative().nullable().default(null),
   supplements: z.array(Supplement).default([]),
   documentRef: DocumentRef.nullable().default(null),
 });
@@ -87,6 +118,27 @@ export const Contract = z.object({
 
 export const SHIFT_KINDS = ['planlagt', 'jobbet'] as const;
 export const ShiftKind = z.enum(SHIFT_KINDS);
+
+/**
+ * Every agreed term left unsaid. Spread this when building a contract so that adding a new
+ * agreed term cannot silently leave existing contracts, fixtures or the demo half-built.
+ */
+export const NO_AGREED_TERMS = {
+  normalDailyLimitHours: null,
+  normalWeeklyLimitHours: null,
+  overtimeSupplementPercent: null,
+  maxOvertimeHoursPer7Days: null,
+  maxOvertimeHoursPer4Weeks: null,
+  maxOvertimeHoursPer52Weeks: null,
+  agreedDailyRestHours: null,
+  agreedWeeklyRestHours: null,
+  breakRequiredAfterHours: null,
+  longDayHours: null,
+  minBreakMinutesLongDay: null,
+  paidBreak: false,
+  largerPositionLookbackMonths: null,
+  feriepengerRatePercent: null,
+} as const;
 
 export const Shift = z.object({
   id: z.string(),

@@ -26,6 +26,11 @@ export default function VakterPage() {
   const [pasteKind, setPasteKind] = useState<ShiftKind>('jobbet');
   const [pasteErrors, setPasteErrors] = useState<{ line: number; text: string; reason: string }[]>([]);
 
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  /** What the uploaded file gave us, shown for confirmation before anything is saved. */
+  const [proposed, setProposed] = useState<{ shifts: Shift[]; documentName: string; readAs: string } | null>(null);
+
   useEffect(() => {
     fetchWorkspace().then(setWorkspace).catch((e: Error) => setError(e.message));
   }, []);
@@ -81,6 +86,45 @@ export default function VakterPage() {
     setPaste('');
   }
 
+  async function onUpload() {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    setMessage(null);
+    setPasteErrors([]);
+    setProposed(null);
+
+    const body = new FormData();
+    body.set('file', file);
+    body.set('kind', pasteKind);
+
+    try {
+      const response = await fetch('/api/import-schedule', { method: 'POST', body });
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.error ?? 'Klarte ikke lese fila.');
+        setPasteErrors(payload.errors ?? []);
+        return;
+      }
+      setProposed({ shifts: payload.shifts, documentName: payload.documentName, readAs: payload.readAs });
+      setPasteErrors(payload.errors ?? []);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onConfirmUpload() {
+    if (!workspace || !proposed) return;
+    await persist(
+      [...workspace.shifts, ...proposed.shifts],
+      `La inn ${proposed.shifts.length} vakter fra ${proposed.documentName}.`,
+    );
+    setProposed(null);
+    setFile(null);
+  }
+
   if (workspace === null) return <Spinner />;
 
   return (
@@ -101,7 +145,106 @@ export default function VakterPage() {
       ) : null}
 
       <div className="card">
-        <h2>Lim inn fra vaktsystemet</h2>
+        <h2>Last opp vaktplanen</h2>
+        <p className="help">
+          Last opp eksporten fra vaktsystemet — CSV, tekstfil eller PDF. Fila leses på din egen maskin, og
+          ingenting sendes noe sted. Du får se vaktene og godkjenne dem før de lagres.
+        </p>
+        <Field label="Fil med vakter" help="CSV, TXT eller PDF. For bilder og skjermbilder: bruk «Les dokument».">
+          <input
+            type="file"
+            accept=".csv,.txt,.tsv,.pdf,text/csv,text/plain,application/pdf"
+            onChange={(e) => {
+              setFile(e.target.files?.[0] ?? null);
+              setProposed(null);
+            }}
+          />
+        </Field>
+        <div className="inline-choice">
+          <label>
+            <input type="radio" name="uploadKind" checked={pasteKind === 'jobbet'} onChange={() => setPasteKind('jobbet')} />
+            Timer jeg har jobbet
+          </label>
+          <label>
+            <input type="radio" name="uploadKind" checked={pasteKind === 'planlagt'} onChange={() => setPasteKind('planlagt')} />
+            En vaktplan
+          </label>
+        </div>
+        <div className="actions">
+          <button type="button" className="primary" onClick={onUpload} disabled={!file || uploading}>
+            {uploading ? 'Leser fila …' : 'Les fila'}
+          </button>
+          <Link className="button" href="/les">
+            Bilde eller skjermbilde? Les dokument
+          </Link>
+        </div>
+
+        {proposed ? (
+          <>
+            <h3>Stemmer dette?</h3>
+            <p className="small muted">
+              {proposed.shifts.length} vakter lest fra {proposed.documentName}
+              {proposed.readAs === 'pdf' ? ' (tekst hentet ut av PDF-en)' : ''}. Til sammen{' '}
+              {formatHours(proposed.shifts.reduce((sum, entry) => sum + shiftWorkedHours(entry), 0))}.
+            </p>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Dato</th>
+                    <th>Fra–til</th>
+                    <th className="num">Pause</th>
+                    <th className="num">Timer</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {proposed.shifts.map((entry) => (
+                    <tr key={entry.id}>
+                      <td className="nowrap">{formatDateShort(entry.date)}</td>
+                      <td className="nowrap">
+                        {entry.start}–{entry.end}
+                      </td>
+                      <td className="num">{entry.breakMinutes} min</td>
+                      <td className="num">{formatHours(shiftWorkedHours(entry))}</td>
+                      <td className="num">
+                        <button
+                          type="button"
+                          className="danger"
+                          onClick={() =>
+                            setProposed({
+                              ...proposed,
+                              shifts: proposed.shifts.filter((other) => other.id !== entry.id),
+                            })
+                          }
+                        >
+                          Fjern
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="actions">
+              <button
+                type="button"
+                className="primary"
+                onClick={onConfirmUpload}
+                disabled={proposed.shifts.length === 0}
+              >
+                Dette stemmer — lagre {proposed.shifts.length} vakter
+              </button>
+              <button type="button" onClick={() => setProposed(null)}>
+                Avbryt
+              </button>
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      <div className="card">
+        <h2>Eller lim inn radene</h2>
         <p className="help">
           Én vakt per linje: <code>dato; fra; til; pause</code>. Både <code>2026-08-17</code> og{' '}
           <code>17.08.2026</code> går, og pausen kan skrives som <code>30</code>, <code>30 min</code> eller{' '}

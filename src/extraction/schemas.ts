@@ -30,6 +30,23 @@ export const ExtractedContract = z.object({
   wageKind: z.enum(['hourly', 'monthly']).nullable(),
   wageKroner: nullableNumber,
   tariffavtale: nullableString,
+  /**
+   * Terms the contract may set instead of the law. Each one defaults to null: a model that
+   * leaves it out has said nothing about it, and the fallback to the statutory value is the
+   * app's job, not the model's. Omitting these must not fail validation — that would waste a
+   * retry on a document that simply does not mention overtime rates.
+   */
+  averagingAgreement: z.boolean().nullable().default(null),
+  overtimeSupplementPercent: nullableNumber.default(null),
+  normalDailyLimitHours: nullableNumber.default(null),
+  normalWeeklyLimitHours: nullableNumber.default(null),
+  agreedDailyRestHours: nullableNumber.default(null),
+  agreedWeeklyRestHours: nullableNumber.default(null),
+  breakRequiredAfterHours: nullableNumber.default(null),
+  minBreakMinutesLongDay: nullableNumber.default(null),
+  paidBreak: z.boolean().nullable().default(null),
+  feriepengerRatePercent: nullableNumber.default(null),
+
   supplements: z.array(ExtractedSupplement),
   /** Anything the model was unsure about, shown to the user next to the fields. */
   notes: z.array(z.string()),

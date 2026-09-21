@@ -12,9 +12,17 @@
  * base pay is claimed by `scheduled_vs_paid`, so the two never double count.
  */
 import { effectiveShifts } from '../aggregate';
-import { normalDailyLimitHours, normalWeeklyLimitHours } from '../derive';
-import { formatHours, formatKr, formatPercent, roundHours } from '../money';
-import type { DateStr, Flag } from '../schemas';
+import { formatHours, formatKr, formatPercent, hoursTimesRate, roundHours } from '../money';
+import {
+  dailyLimit as resolveDailyLimit,
+  maxOvertimePer4Weeks,
+  maxOvertimePer52Weeks,
+  maxOvertimePer7Days,
+  overtimeSupplementPercent as resolveSupplementPercent,
+  weeklyLimit as resolveWeeklyLimit,
+  withSource,
+} from '../thresholds';
+import { OVERTIME_CATEGORIES, type DateStr, type Flag } from '../schemas';
 import { doegnGroups, formatDateLong, isWithin, toEpochDay } from '../time';
 import {
   buildFlag,
@@ -37,7 +45,7 @@ interface DoegnExcess {
 /** Overtime from working more than the daily limit, per arbeidsdøgn (24 h from work start). */
 function dailyExcesses(context: RuleContext, dailyLimit: number, tolerance: number): DoegnExcess[] {
   const newPeriodAfterRestHours = numberParam(context.rule, 'new_period_after_rest_hours', 11);
-  return doegnGroups(effectiveShifts(context.shifts), { newPeriodAfterRestHours })
+  return doegnGroups(effectiveShifts(context.workTimeShifts), { newPeriodAfterRestHours })
     .map((group) => {
       const workedHours = group.workedMinutes / 60;
       return { date: group.date, workedHours, excessHours: roundHours(workedHours - dailyLimit) };
@@ -50,13 +58,78 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
   const range = context.dataRange;
   if (!range) return flags;
 
-  const dailyLimit = normalDailyLimitHours(context.contract, context.rule.params);
-  const weeklyLimit = normalWeeklyLimitHours(context.contract, context.rule.params);
-  const supplementPercent = numberParam(context.rule, 'overtime_supplement_percent', 40);
+  // The contract governs; the law is the fallback and, for the supplement, the floor.
+  const daily = resolveDailyLimit(context.contract, context.rule);
+  const weekly = resolveWeeklyLimit(context.contract, context.rule);
+  const supplement = resolveSupplementPercent(context.contract, context.rule);
+  const dailyLimit = daily.value;
+  const weeklyLimit = weekly.value;
+  const supplementPercent = supplement.value;
   const tolerance = numberParam(context.rule, 'tolerance_hours', 0.25);
   const rate = context.hourlyRateOre;
 
   const excesses = dailyExcesses(context, dailyLimit, tolerance);
+
+  /* ----------------- kontraktsvilkår som er svakere enn loven tillater */
+  if (supplement.belowStatutory) {
+    flags.push(
+      buildFlag(context, {
+        key: 'tillegg-under-lovens-minimum',
+        severity: 'bor_sjekkes',
+        title: 'Kontrakten lover mindre overtidstillegg enn loven krever',
+        periodLabel: 'Hele perioden',
+        periodStart: range.start,
+        periodEnd: range.end,
+        message:
+          `Kontrakten din oppgir ${formatPercent(supplement.belowStatutory.contractValue)} i overtidstillegg. ` +
+          `Loven krever minst ${formatPercent(supplement.belowStatutory.statutory)}, og et dårligere vilkår i ` +
+          `en arbeidsavtale er ikke gyldig. Vi har derfor regnet med ` +
+          `${formatPercent(supplement.belowStatutory.statutory)}. Dette er verdt å ta opp uansett hva ` +
+          `lønnsslippene viser.`,
+        evidence: [
+          ev('Tillegg i kontrakten', formatPercent(supplement.belowStatutory.contractValue)),
+          ev('Lovens minimum', formatPercent(supplement.belowStatutory.statutory)),
+          ev('Brukt i utregningene', formatPercent(supplementPercent)),
+        ],
+        amountOre: null,
+        documentRefs: contractRef(context),
+      }),
+    );
+  }
+
+  /* --------- høyere arbeidstidsgrense enn loven, uten gjennomsnittsberegning */
+  const statutoryDaily = numberParam(context.rule, 'normal_daily_limit_hours', 9);
+  const statutoryWeekly = numberParam(context.rule, 'normal_weekly_limit_hours', 40);
+  if (
+    !context.contract.averagingAgreement &&
+    ((daily.source === 'kontrakt' && daily.value > statutoryDaily) ||
+      (weekly.source === 'kontrakt' && weekly.value > statutoryWeekly))
+  ) {
+    flags.push(
+      buildFlag(context, {
+        key: 'hoyere-grense-uten-avtale',
+        severity: 'bor_sjekkes',
+        title: 'Kontrakten har høyere arbeidstidsgrense enn lovens hovedregel',
+        periodLabel: 'Hele perioden',
+        periodStart: range.start,
+        periodEnd: range.end,
+        message:
+          `Vi regner med ${formatHours(dailyLimit)} per døgn og ${formatHours(weeklyLimit)} per uke, fordi det ` +
+          `er det kontrakten din sier. Lovens hovedregel er ${formatHours(statutoryDaily)} og ` +
+          `${formatHours(statutoryWeekly)}. Høyere grenser krever som regel skriftlig avtale om ` +
+          `gjennomsnittsberegning, og du har ikke krysset av for at kontrakten har en slik avtale. ` +
+          `Sjekk om det står noe om gjennomsnittsberegning i avtalen din — det avgjør hvor mye som er overtid.`,
+        evidence: [
+          ev('Grense per døgn', withSource(formatHours(dailyLimit), daily)),
+          ev('Grense per uke', withSource(formatHours(weeklyLimit), weekly)),
+          ev('Lovens hovedregel', `${formatHours(statutoryDaily)} per døgn, ${formatHours(statutoryWeekly)} per uke`),
+          ev('Gjennomsnittsberegning avtalt', 'Nei'),
+        ],
+        amountOre: null,
+        documentRefs: contractRef(context),
+      }),
+    );
+  }
 
   /** Extra overtime that only shows up when the whole week is added together. */
   const extraWeeklyByWeek = new Map<string, number>();
@@ -119,18 +192,19 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
         periodEnd,
         message:
           `Vi regner ${formatHours(computed)} som overtid i denne perioden, mens lønnsslippen viser ` +
-          `${formatHours(summary.paidOvertimeHours)} overtid. Overtid skal ha minst ` +
-          `${formatPercent(supplementPercent)} tillegg på toppen av vanlig timelønn. ` +
+          `${formatHours(summary.paidOvertimeHours)} overtid. Overtid skal ha ` +
+          `${formatPercent(supplementPercent)} tillegg på toppen av vanlig timelønn ` +
+          `(${supplement.label}). ` +
           `Her er bare selve tillegget regnet med — er timene heller ikke betalt som vanlige timer, ` +
           `kommer grunnlønna i tillegg (se «Er alle timene du jobbet betalt?»).`,
         evidence: [
-          ev('Grense per arbeidsdøgn', formatHours(dailyLimit)),
-          ev('Grense per uke', formatHours(weeklyLimit)),
+          ev('Grense per arbeidsdøgn', withSource(formatHours(dailyLimit), daily)),
+          ev('Grense per uke', withSource(formatHours(weeklyLimit), weekly)),
           ev('Overtid vi regner ut', formatHours(computed)),
           ev('Overtid på lønnsslippen', formatHours(summary.paidOvertimeHours)),
           ev('Mangler', formatHours(missing)),
           ev('Timelønn', formatKr(rate)),
-          ev('Tillegg', formatPercent(supplementPercent)),
+          ev('Tillegg', withSource(formatPercent(supplementPercent), supplement)),
           ...detail,
         ],
         calculation,
@@ -138,6 +212,48 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
         documentRefs: [...refsFromPayslip(summary.payslip), ...contractRef(context)],
       }),
     );
+  }
+
+  /* ------------------------- 1b. overtidstimer betalt med for lav sats */
+  const requiredOvertimeRate = Math.round(rate * (1 + supplementPercent / 100));
+  const rateTolerance = numberParam(context.rule, 'rate_tolerance_ore', 50);
+
+  for (const summary of context.summaries) {
+    for (const line of summary.payslip.lines) {
+      if (!OVERTIME_CATEGORIES.includes(line.category as (typeof OVERTIME_CATEGORIES)[number])) continue;
+      if (line.rateOre === null || line.hours === null || line.hours <= 0) continue;
+      const shortfallPerHour = requiredOvertimeRate - line.rateOre;
+      if (shortfallPerHour <= rateTolerance) continue;
+
+      const amountOre = hoursTimesRate(line.hours, shortfallPerHour);
+      flags.push(
+        buildFlag(context, {
+          key: `sats:${summary.payslip.id}:${line.id}`,
+          title: 'Overtiden er betalt med for lav sats',
+          periodLabel: summary.label,
+          periodStart: summary.payslip.periodStart,
+          periodEnd: summary.payslip.periodEnd,
+          message:
+            `Med timelønn ${formatKr(rate)} og ${formatPercent(supplementPercent)} tillegg ` +
+            `(${supplement.label}) skal overtidstimene betales med ${formatKr(requiredOvertimeRate)}. ` +
+            `Linja «${line.label}» er betalt med ${formatKr(line.rateOre)}. Differansen er ` +
+            `${formatKr(shortfallPerHour)} per time for ${formatHours(line.hours)}.`,
+          evidence: [
+            ev('Timelønn', formatKr(rate)),
+            ev('Tillegg', withSource(formatPercent(supplementPercent), supplement)),
+            ev('Sats overtiden skal ha', formatKr(requiredOvertimeRate)),
+            ev('Sats på lønnsslippen', formatKr(line.rateOre)),
+            ev('Timer på linja', formatHours(line.hours)),
+          ],
+          calculation: {
+            expression: `${formatHours(line.hours)} × (${formatKr(requiredOvertimeRate)} − ${formatKr(line.rateOre)}) = ${formatKr(amountOre)}`,
+            resultOre: amountOre,
+          },
+          amountOre,
+          documentRefs: [...refsFromPayslip(summary.payslip), ...contractRef(context)],
+        }),
+      );
+    }
   }
 
   /* ------------------------------------------------- 2. merarbeid, forklart én gang */
@@ -164,6 +280,8 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
           `til en større stilling — se den egne flagget om det.`,
         evidence: [
           ev('Avtalt arbeidstid', formatHours(context.contractedWeeklyHours)),
+          ev('Grense per døgn', withSource(formatHours(dailyLimit), daily)),
+          ev('Grense per uke', withSource(formatHours(weeklyLimit), weekly)),
           ev('Merarbeid til sammen', formatHours(total)),
           ev('Uker med merarbeid', String(merarbeidByWeek.size)),
           ...weeks.slice(0, 8).map((week) =>
@@ -177,9 +295,12 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
   }
 
   /* --------------------------------------------- 3. grensene for hvor mye overtid */
-  const maxPerWeek = numberParam(context.rule, 'max_overtime_hours_per_7_days', 10);
-  const maxPer4Weeks = numberParam(context.rule, 'max_overtime_hours_per_4_weeks', 25);
-  const maxPer52Weeks = numberParam(context.rule, 'max_overtime_hours_per_52_weeks', 200);
+  const per7Days = maxOvertimePer7Days(context.contract, context.rule);
+  const per4Weeks = maxOvertimePer4Weeks(context.contract, context.rule);
+  const per52Weeks = maxOvertimePer52Weeks(context.contract, context.rule);
+  const maxPerWeek = per7Days.value;
+  const maxPer4Weeks = per4Weeks.value;
+  const maxPer52Weeks = per52Weeks.value;
 
   for (const week of context.weeks) {
     const hours = overtimeByWeek.get(week.key) ?? 0;
@@ -196,7 +317,10 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
           `Overtid skal som hovedregel ikke overstige ${formatHours(maxPerWeek)} i løpet av sju dager. ` +
           `I ${week.label.toLowerCase()} regner vi ${formatHours(hours)} overtid. Høyere grenser kan følge av ` +
           `avtale med tillitsvalgte eller tillatelse fra Arbeidstilsynet.`,
-        evidence: [ev('Overtid denne uka', formatHours(hours)), ev('Lovens hovedregel', formatHours(maxPerWeek))],
+        evidence: [
+          ev('Overtid denne uka', formatHours(hours)),
+          ev('Grensen vi måler mot', withSource(formatHours(maxPerWeek), per7Days)),
+        ],
         amountOre: null,
         documentRefs: refsFromSegments(context.effective.filter((s) => isWithin(s.date, week.start, week.end))),
       }),
@@ -223,7 +347,10 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
         message:
           `Overtid skal som hovedregel ikke overstige ${formatHours(maxPer4Weeks)} i fire sammenhengende uker. ` +
           `Fra ${first.label.toLowerCase()} til ${last.label.toLowerCase()} regner vi ${formatHours(hours)}.`,
-        evidence: [ev('Overtid i perioden', formatHours(hours)), ev('Lovens hovedregel', formatHours(maxPer4Weeks))],
+        evidence: [
+          ev('Overtid i perioden', formatHours(hours)),
+          ev('Grensen vi måler mot', withSource(formatHours(maxPer4Weeks), per4Weeks)),
+        ],
         amountOre: null,
       }),
     );
@@ -245,7 +372,10 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
         message:
           `Overtid skal som hovedregel ikke overstige ${formatHours(maxPer52Weeks)} i løpet av 52 uker. ` +
           `I dataene dine regner vi ${formatHours(totalOvertime)}.`,
-        evidence: [ev('Overtid til sammen', formatHours(totalOvertime)), ev('Lovens hovedregel', formatHours(maxPer52Weeks))],
+        evidence: [
+          ev('Overtid til sammen', formatHours(totalOvertime)),
+          ev('Grensen vi måler mot', withSource(formatHours(maxPer52Weeks), per52Weeks)),
+        ],
         amountOre: null,
       }),
     );
