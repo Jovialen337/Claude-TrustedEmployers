@@ -186,3 +186,29 @@ plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
   the app claims both. Many agreements pay only the higher one. Not modelled; the demo avoids
   the ambiguity by putting the holiday shifts on weekdays, and the flag always shows which
   contract term it came from so the user can correct it.
+
+## Extraction and privacy
+
+- **2026-09-21 — Masking happens inside the extraction function, not at the call site.**
+  `extractStructured` masks the text itself before building the prompt, so there is no path
+  to the API that skips it. A test asserts that a fødselsnummer and an account number in the
+  source text are absent from what the transport receives, and that the employer, rates and
+  amounts survive.
+- **2026-09-21 — Images cannot be masked, so they need explicit consent.** A photo or
+  screenshot may show a fødselsnummer, and nothing in this app can remove it from an image.
+  The route refuses image input until the user ticks a box that says so in plain Norwegian,
+  and the confirmation screen repeats that the document was sent unmasked. PDF text
+  extraction is always tried first, precisely because that path *can* be masked.
+- **2026-09-21 — A scanned PDF is rejected rather than silently re-read as an image.** The
+  pages of a scanned PDF would have to be rasterised to be sent as images, which is more
+  machinery than it is worth; the user is asked for a screenshot or manual entry instead.
+- **2026-09-21 — Model output is validated, re-asked once, then failed loudly.** The model
+  gets one more attempt with the validation error, and after that extraction fails with a
+  message that points to manual entry. Nothing is coerced or defaulted on the model's behalf:
+  a supplement read without a rate is dropped rather than stored as 0 kr, and a field the
+  model leaves null keeps whatever the user already had.
+- **2026-09-21 — `temperature: 0` for extraction.** Reading the same document twice should
+  give the same fields.
+- **2026-09-21 — The transport is injected.** `extractStructured` takes a `send` function, so
+  retries, JSON recovery, masking and the domain mapping are all unit tested without a key or
+  a network. Only `src/extraction/claude.ts` touches the SDK.

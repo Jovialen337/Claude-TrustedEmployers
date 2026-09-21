@@ -9,7 +9,9 @@ import path from 'node:path';
 import { Workspace, emptyWorkspace } from '../domain/schemas';
 
 export function dataDir(): string {
-  return path.resolve(process.cwd(), process.env.LONNSSJEKK_DATA_DIR ?? '.data');
+  // The bundler cannot see through an env-var path, and warns that it may need to trace the
+  // whole filesystem. This is a local app reading its own data directory, so opt out.
+  return path.resolve(/* turbopackIgnore: true */ process.cwd(), process.env.LONNSSJEKK_DATA_DIR ?? '.data');
 }
 
 export function workspacePath(): string {

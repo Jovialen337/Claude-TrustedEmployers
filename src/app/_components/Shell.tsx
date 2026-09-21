@@ -10,6 +10,7 @@ const STEPS = [
   { href: '/kontrakt', label: '1. Kontrakt' },
   { href: '/vakter', label: '2. Vakter' },
   { href: '/lonnsslipper', label: '3. Lønnsslipper' },
+  { href: '/les', label: 'Les dokument' },
   { href: '/sjekk', label: '4. Sjekk' },
   { href: '/rapport', label: '5. Rapport' },
   { href: '/innstillinger', label: 'Innstillinger' },

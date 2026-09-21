@@ -14,7 +14,7 @@ from the first unticked box. Do not start over.
 - [x] 6. Local JSON storage + API routes (workspace, check, demo, slett alt)
 - [x] 7. Manual entry UI (kontrakt, vakter, lønnsslipper) — works with no AI
 - [x] 8. Result UI: oversikt + tidslinje + flag details with evidence
-- [ ] 9. AI extraction: PDF text + masking + Claude structured output + confirm/edit screens
+- [x] 9. AI extraction: PDF text + masking + Claude structured output + confirm/edit screens
 - [x] 10. Report: PDF export + draft message to employer
 - [x] 11. Demo data: fake worker, 3 months, deliberate errors + end-to-end check (moved earlier: the UI needed something to show)
 - [ ] 12. Norwegian README + final verification (tests, real app start, hand-checked kroner)
@@ -44,3 +44,6 @@ from the first unticked box. Do not start over.
   rapport), paste importer for shift-system exports, PDF report and editable draft message.
   138 tests pass; `npm run build` succeeds. Importer bugs found by tests: the comma separator
   split Norwegian decimals ("0,5 t"), and 32.13.2026 passed as a date.
+- 2026-09-21 — Step 9 done: PII masking at the API boundary, PDF text extraction, prompts that
+  forbid guessing and judging, validate-and-re-ask, the /les confirm-and-edit screen, and the
+  settings page with rule toggles and "Slett alt". 155 tests pass; build is clean.
