@@ -78,3 +78,24 @@ Format: `YYYY-MM-DD — topic — decision (why)`
 - **2026-09-21 — Rest-period severity is graded, not fixed.** Less than the 8 t that even
   an agreement cannot go below is reported as `Sannsynlig feil`; between 8 t and 11 t is
   `Bør sjekkes`, since a tariff-based agreement may legitimately allow it.
+
+## Aggregation
+
+- **2026-09-21 — Registered hours beat the plan for the same day.** If any shift on a date
+  is marked `jobbet`, the `planlagt` shifts for that date are ignored in the check: you
+  were there, so that is the truth. The plan is still kept and still shown in the timeline,
+  so "planlagt vs jobbet vs betalt" remains visible.
+- **2026-09-21 — Paid hours are never attributed to individual weeks.** A monthly payslip
+  states hours per category for the whole month, so splitting them across weeks would be
+  invented data. Consequences: `scheduled_vs_paid` compares at the *payslip period* level
+  ("Lønn for august 2026: jobbet 78,0 t, betalt 74,0 t …"), while genuinely weekly checks
+  (`hours_vs_stillingsprosent`) compare contracted against scheduled/worked hours, both of
+  which are known exactly per week. The timeline shows paid hours on a week row only when a
+  payslip covers exactly that week (a weekly payslip); otherwise the week row points to the
+  payslip period it belongs to. This keeps every number on screen traceable to a document.
+- **2026-09-21 — Supplement hours are scaled by the worked share of the shift.** The
+  overlap between a shift and a supplement window is measured on the clock span, then
+  multiplied by `workedMinutes / grossMinutes`, i.e. the break is assumed spread evenly
+  across the shift. Without this a 30-minute unpaid break inside an evening window would
+  earn an evening supplement. If a contract says exactly when the break falls, that is more
+  precise than this app can currently model.

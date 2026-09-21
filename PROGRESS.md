@@ -9,7 +9,7 @@ from the first unticked box. Do not start over.
 - [x] 1. Scaffold: Next.js + TypeScript + vitest, .gitignore, .env.example, npm scripts
 - [x] 2. Domain foundations: schemas.ts (zod), money.ts, time.ts, holidays.ts, derive.ts + tests
 - [x] 3. Ruleset file `rules/no_default.json` with sources and plain-language explanations
-- [ ] 4. Aggregation (per week / month / payslip period) + tests
+- [x] 4. Aggregation (per week / month / payslip period) + tests
 - [ ] 5. Rules engine + all 8 rules + unit tests incl. the 6 required edge cases
 - [ ] 6. Local JSON storage + API routes (workspace, check, demo, slett alt)
 - [ ] 7. Manual entry UI (kontrakt, vakter, lønnsslipper) — works with no AI
@@ -30,3 +30,5 @@ from the first unticked box. Do not start over.
 - 2026-09-21 — Step 3 done: rules/no_default.json with all 8 rules, each with plain-language
   explanation, params and paragraph citations. lovdata.no is egress-blocked, so rules are
   marked `sekundaerkilde` (see DECISIONS.md). 34 tests pass.
+- 2026-09-21 — Step 4 done: aggregate.ts (effective shifts, ISO-week/month buckets, payslip
+  summaries, supplement-window hours) + fixtures. 47 tests pass.
