@@ -1,6 +1,7 @@
 'use client';
 
 import { formatKr } from '@/domain/money';
+import { formatSource } from '@/domain/sources';
 import type { Flag } from '@/domain/schemas';
 import { Badge } from './bits';
 
@@ -61,9 +62,7 @@ export function FlagCard({ flag, open = false }: { flag: Flag; open?: boolean })
             <ul className="sources">
               {flag.sources.map((source, index) => (
                 <li key={`${source.law}-${source.paragraph}-${index}`}>
-                  <strong>
-                    {source.law} {source.paragraph}
-                  </strong>
+                  <strong>{formatSource(source)}</strong>
                   {source.note ? ` — ${source.note}` : ''}
                   {source.url ? (
                     <>

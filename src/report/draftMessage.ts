@@ -5,18 +5,14 @@
 import type { CheckResult } from '../domain/engine';
 import { formatHours, formatKr } from '../domain/money';
 import type { Contract, Flag } from '../domain/schemas';
+import { formatSource } from '../domain/sources';
 import { formatDateLong } from '../domain/time';
 
 function claimLine(flag: Flag, index: number): string {
   const lines = [`${index}. ${flag.title} — ${flag.periodLabel}`];
   if (flag.calculation) lines.push(`   Slik har jeg regnet: ${flag.calculation.expression}`);
   const source = flag.sources[0];
-  if (source) {
-    // "Arbeidsmiljøloven § 10-4", but "Arbeidsavtalen, Avtalte tillegg" — a contract point
-    // is not a paragraph, so it does not read as one.
-    const separator = source.paragraph.startsWith('§') ? ' ' : ', ';
-    lines.push(`   Grunnlag: ${source.law}${separator}${source.paragraph}`);
-  }
+  if (source) lines.push(`   Grunnlag: ${formatSource(source)}`);
   return lines.join('\n');
 }
 

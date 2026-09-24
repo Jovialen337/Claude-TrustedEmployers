@@ -6,6 +6,7 @@ import PDFDocument from 'pdfkit';
 import type { CheckResult } from '../domain/engine';
 import { formatHours, formatKr } from '../domain/money';
 import { SEVERITY_LABELS, type Contract, type Flag, type Severity, type Workspace } from '../domain/schemas';
+import { formatSource, formatSources } from '../domain/sources';
 import { formatDateShort } from '../domain/time';
 import { DISCLAIMER, METHOD_NOTE } from './disclaimer';
 import { draftMessage } from './draftMessage';
@@ -200,7 +201,7 @@ export function buildReportPdf(
   const seen = new Set<string>();
   for (const flag of result.flags) {
     for (const source of flag.sources) {
-      const key = `${source.law} ${source.paragraph}`;
+      const key = formatSource(source);
       if (seen.has(key)) continue;
       seen.add(key);
       write(key, 10, 'Helvetica-Bold');
@@ -258,7 +259,7 @@ function writeFlag(doc: PDFKit.PDFDocument, flag: Flag): void {
 
   if (flag.sources.length > 0) {
     doc.fontSize(9).text(
-      toWinAnsi(`Grunnlag: ${flag.sources.map((source) => `${source.law} ${source.paragraph}`).join('; ')}`),
+      toWinAnsi(`Grunnlag: ${formatSources(flag.sources)}`),
       { indent: 12 },
     );
   }

@@ -383,3 +383,11 @@ gaps came out of it.
   contract, uploading a schedule, the check (including that every money finding's calculation
   produces its own amount and every finding cites a source), the PDF, a rule override, the demo's
   expected 22 findings and 6 436,38 kr, and deleting everything.
+
+- **2026-09-24 — One function writes out a rule's source, for all three surfaces.** Running the
+  app surfaced "Arbeidsavtalen eller tariffavtalen Avtalte tillegg" on screen: a contract point
+  run together with its law as if it were a paragraph. The draft message had been fixed for this
+  earlier, but the screen, the PDF and the settings list each had their own copy of the same
+  concatenation. `src/domain/sources.ts` now owns it — a comma when the reference is not a §, a
+  space when it is — and a test walks every source in the ruleset to check the output reads
+  properly. Three copies of a formatting rule is three chances to drift.

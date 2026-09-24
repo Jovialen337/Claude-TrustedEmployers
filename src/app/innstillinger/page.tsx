@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { DEFAULT_RULESET } from '@/domain/ruleset';
+import { formatSource } from '@/domain/sources';
 import { formatHours, parseHoursInput } from '@/domain/money';
 import type { RuleId, Workspace } from '@/domain/schemas';
 import { Field, Notice, Spinner } from '../_components/bits';
@@ -130,9 +131,7 @@ export default function InnstillingerPage() {
                 <ul className="sources">
                   {rule.sources.map((source, index) => (
                     <li key={index}>
-                      <strong>
-                        {source.law} {source.paragraph}
-                      </strong>
+                      <strong>{formatSource(source)}</strong>
                       {source.note ? ` — ${source.note}` : ''}
                     </li>
                   ))}
