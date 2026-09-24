@@ -236,7 +236,8 @@ textarea:focus-visible, a:focus-visible, summary:focus-visible {
 /* ------------------------------------------------------------------- forms */
 
 .field { margin-bottom: 0.9rem; }
-.field label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem; }
+.field > label,
+.field > .field-label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem; }
 .field .help { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; }
 
 input[type='text'], input[type='date'], input[type='time'], input[type='number'], select, textarea {

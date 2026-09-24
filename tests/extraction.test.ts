@@ -7,9 +7,16 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { formatKr } from '@/domain/money';
-import { ExtractionError, extractJsonObject, extractStructured, type Send } from '@/extraction/extract';
+import {
+  ExtractionError,
+  MASKED_PREVIEW_LENGTH,
+  extractJsonObject,
+  extractStructured,
+  maskedPreview,
+  type Send,
+} from '@/extraction/extract';
 import { ExtractedContract, ExtractedPayslip, ExtractedSchedule } from '@/extraction/schemas';
-import { contractFromExtraction, payslipFromExtraction, shiftsFromExtraction } from '@/extraction/toDomain';
+import { contractFromExtraction, payslipFromExtraction, shiftsFromExtraction, storedDocumentFrom } from '@/extraction/toDomain';
 import { buildPrompt } from '@/extraction/prompts';
 import { contract as contractFixture } from './fixtures';
 
@@ -286,5 +293,43 @@ describe('fra uthentede felt til datamodellen', () => {
     expect(skipped).toBe(1);
     expect(shifts.every((shift) => shift.source === 'ai')).toBe(true);
     expect(shifts[1]).toMatchObject({ start: '22:00', end: '06:00', breakMinutes: 30 });
+  });
+});
+
+describe('dokumentet som ble lest', () => {
+  it('gir en maskert forhåndsvisning av det som faktisk ble sendt', async () => {
+    const send: Send = async () => VALID_CONTRACT_JSON;
+    const outcome = await extractStructured({
+      kind: 'kontrakt',
+      text: CONTRACT_TEXT,
+      schema: ExtractedContract,
+      send,
+    });
+    expect(outcome.maskedTextPreview).toContain('Kafé Nordlys AS');
+    expect(outcome.maskedTextPreview).toContain('[fjernet fødselsnummer]');
+    expect(outcome.maskedTextPreview).not.toContain('01019012345');
+  });
+
+  it('kutter en lang forhåndsvisning i stedet for å lagre hele dokumentet', () => {
+    expect(maskedPreview('a'.repeat(5000)).length).toBe(MASKED_PREVIEW_LENGTH + 2);
+    expect(maskedPreview('kort tekst')).toBe('kort tekst');
+  });
+
+  it('lager et dokument som kan lagres i arbeidsrommet', () => {
+    const document = storedDocumentFrom({
+      ref: { docId: 'doc-1', docName: 'Lønnsslipp juli.pdf', page: 1, kind: 'lonnsslipp' },
+      kind: 'lonnsslipp',
+      pageCount: 2,
+      maskedTextPreview: 'Timelønn 92,00 × 198,50',
+      now: '2026-09-24T00:00:00.000Z',
+    });
+    expect(document).toEqual({
+      id: 'doc-1',
+      name: 'Lønnsslipp juli.pdf',
+      kind: 'lonnsslipp',
+      pageCount: 2,
+      addedAt: '2026-09-24T00:00:00.000Z',
+      maskedTextPreview: 'Timelønn 92,00 × 198,50',
+    });
   });
 });

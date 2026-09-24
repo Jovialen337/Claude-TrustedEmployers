@@ -219,10 +219,6 @@ export function payslipSummary(payslip: Payslip): PayslipSummary {
   };
 }
 
-export function categoryHours(summary: PayslipSummary, category: PayslipCategory): number {
-  return summary.byCategory.get(category)?.hours ?? 0;
-}
-
 export function categoryAmountOre(summary: PayslipSummary, category: PayslipCategory): number {
   return summary.byCategory.get(category)?.amountOre ?? 0;
 }

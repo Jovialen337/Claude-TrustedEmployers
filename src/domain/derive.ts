@@ -30,9 +30,14 @@ export function effectiveHourlyRateOre(contract: Contract): number {
   return Math.round((contract.wage.amountOre * 12) / (weekly * 52));
 }
 
+/**
+ * How the hourly rate used in every money estimate was arrived at. Shown as evidence, because
+ * for a monthly salary the rate is derived, and a derived number should never appear without
+ * its derivation.
+ */
 export function hourlyRateExplanation(contract: Contract): string {
-  if (contract.wage.kind === 'hourly') return 'Timelønn fra kontrakten.';
-  return `Månedslønn × 12 / (${contractedHoursPerWeek(contract)} t/uke × 52 uker)`;
+  if (contract.wage.kind === 'hourly') return 'fra kontrakten din';
+  return `månedslønn × 12 / (${contractedHoursPerWeek(contract)} t/uke × 52 uker)`;
 }
 
 /**

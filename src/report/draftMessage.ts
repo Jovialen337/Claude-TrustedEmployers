@@ -6,7 +6,6 @@ import type { CheckResult } from '../domain/engine';
 import { formatHours, formatKr } from '../domain/money';
 import type { Contract, Flag } from '../domain/schemas';
 import { formatDateLong } from '../domain/time';
-import { DISCLAIMER } from './disclaimer';
 
 function claimLine(flag: Flag, index: number): string {
   const lines = [`${index}. ${flag.title} — ${flag.periodLabel}`];
@@ -75,8 +74,4 @@ export function draftMessage(result: CheckResult, contract: Contract | null): st
   parts.push(contract?.employeeName?.trim() || '[navnet ditt]');
 
   return parts.join('\n\n');
-}
-
-export function draftMessageFooterNote(): string {
-  return DISCLAIMER;
 }

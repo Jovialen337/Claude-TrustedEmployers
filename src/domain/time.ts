@@ -49,10 +49,6 @@ export function daysBetween(from: DateStr, to: DateStr): number {
   return toEpochDay(to) - toEpochDay(from);
 }
 
-export function compareDates(a: DateStr, b: DateStr): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 export function isWithin(date: DateStr, start: DateStr, end: DateStr): boolean {
   return date >= start && date <= end;
 }

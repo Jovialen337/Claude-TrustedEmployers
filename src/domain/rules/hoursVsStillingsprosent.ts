@@ -5,7 +5,7 @@
  * contracted hours and the scheduled/worked hours are known exactly. The monthly and
  * whole-period flags are roll-ups with no amount of their own, so nothing double counts.
  */
-import { contractedHoursPerWeekExplanation } from '../derive';
+import { contractedHoursPerWeekExplanation, hourlyRateExplanation } from '../derive';
 import { formatHours, formatKr, roundHours } from '../money';
 import type { Flag } from '../schemas';
 import { addDays, isWithin } from '../time';
@@ -63,7 +63,7 @@ export const hoursVsStillingsprosent: RuleFn = (context: RuleContext): Flag[] =>
           ev('Planlagt denne uka', formatHours(week.plannedHours)),
           ev('Timer som gjelder', formatHours(week.workedHours)),
           ev('Differanse', formatHours(short)),
-          ev('Timelønn', `${formatKr(rate)} (fra kontrakten din)`),
+          ev('Timelønn', `${formatKr(rate)} (${hourlyRateExplanation(context.contract)})`),
         ],
         calculation,
         amountOre: calculation.resultOre,

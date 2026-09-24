@@ -8,9 +8,12 @@
  */
 import { NextResponse } from 'next/server';
 import { parseShiftPaste } from '@/domain/importShifts';
-import { ShiftKind, type DocumentRef, type Shift } from '@/domain/schemas';
+import { ShiftKind, type DocumentRef, type Shift, type StoredDocument } from '@/domain/schemas';
 import { hasApiKey } from '@/extraction/claude';
+import { maskedPreview } from '@/extraction/extract';
 import { extractPdfText, isImage, isPdf } from '@/extraction/pdfText';
+import { storedDocumentFrom } from '@/extraction/toDomain';
+import { maskPersonalData } from '@/privacy/mask';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +24,8 @@ export interface ScheduleImportResult {
   /** How the text was obtained, so the confirm screen can be honest about it. */
   readAs: 'tekst' | 'pdf';
   aiAvailable: boolean;
+  /** Recorded in the workspace when the user confirms, so the file is listed and deletable. */
+  document: StoredDocument;
 }
 
 export async function POST(request: Request) {
@@ -51,11 +56,13 @@ export async function POST(request: Request) {
 
   let text: string;
   let readAs: ScheduleImportResult['readAs'];
+  let pageCount: number | null = null;
 
   if (isPdf(file.name, file.type)) {
     const pdf = await extractPdfText(bytes);
     text = pdf.text;
     readAs = 'pdf';
+    pageCount = pdf.pages.length;
     if (pdf.looksScanned) {
       return NextResponse.json(
         {
@@ -99,6 +106,14 @@ export async function POST(request: Request) {
     documentName: file.name,
     readAs,
     aiAvailable: hasApiKey(),
+    // Nothing was sent anywhere — the file was read here — but the stored preview is masked
+    // all the same, since it is shown on screen and kept on disk.
+    document: storedDocumentFrom({
+      ref: documentRef,
+      kind: 'vaktplan',
+      pageCount,
+      maskedTextPreview: maskedPreview(maskPersonalData(text).text),
+    }),
   };
   return NextResponse.json(result);
 }

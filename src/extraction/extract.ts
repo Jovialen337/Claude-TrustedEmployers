@@ -40,6 +40,8 @@ export interface ExtractionOutcome<T> {
   redactions: Redaction[];
   notes: string[];
   attempts: number;
+  /** The start of the masked text that was sent, so the user can see what left the machine. */
+  maskedTextPreview: string;
 }
 
 export class ExtractionError extends Error {
@@ -61,6 +63,15 @@ export function extractJsonObject(response: string): string | null {
   const end = candidate.lastIndexOf('}');
   if (start === -1 || end === -1 || end <= start) return null;
   return candidate.slice(start, end + 1);
+}
+
+export const MASKED_PREVIEW_LENGTH = 800;
+
+export function maskedPreview(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.length <= MASKED_PREVIEW_LENGTH
+    ? trimmed
+    : `${trimmed.slice(0, MASKED_PREVIEW_LENGTH)} …`;
 }
 
 export async function extractStructured<T>(options: {
@@ -116,6 +127,7 @@ export async function extractStructured<T>(options: {
       redactions: masked.redactions,
       notes: Array.isArray(notes) ? notes.filter((note): note is string => typeof note === 'string') : [],
       attempts: attempt,
+      maskedTextPreview: maskedPreview(masked.text),
     };
   }
 

@@ -81,3 +81,27 @@ describe('last opp vaktplan', () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe('dokumentet blir registrert', () => {
+  it('leverer dokumentet med en maskert forhåndsvisning', async () => {
+    const { body } = await upload(CSV, 'vaktplan.csv', 'text/csv');
+    const document = body.document as { id: string; name: string; kind: string; maskedTextPreview: string | null };
+    expect(document.name).toBe('vaktplan.csv');
+    expect(document.kind).toBe('vaktplan');
+    expect(document.maskedTextPreview).toContain('2026-08-17;17:00;22:00');
+    // Vaktene peker på samme dokument, slik at «Hentet fra» har en oppføring å vise til.
+    expect((body.shifts as { documentRef: { docId: string } }[])[0]!.documentRef.docId).toBe(document.id);
+  });
+
+  it('maskerer personopplysninger i forhåndsvisningen, selv om fila aldri forlot maskinen', async () => {
+    const { body } = await upload(
+      ['ansatt;01019012345;konto 1234.56.78901', '2026-08-17;17:00;22:00;0'].join('\n'),
+      'med-personnummer.csv',
+      'text/csv',
+    );
+    const preview = (body.document as { maskedTextPreview: string }).maskedTextPreview;
+    expect(preview).not.toContain('01019012345');
+    expect(preview).not.toContain('1234.56.78901');
+    expect(preview).toContain('[fjernet fødselsnummer]');
+  });
+});

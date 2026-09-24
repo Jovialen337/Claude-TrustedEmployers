@@ -171,6 +171,43 @@ export default function InnstillingerPage() {
           <li>Sist endret: {workspace.updatedAt.slice(0, 16).replace('T', ' ')}</li>
         </ul>
 
+        {workspace.documents.length > 0 ? (
+          <>
+            <h3>Dokumenter vi har lest</h3>
+            <p className="help">
+              Slik ble dokumentet lest — med fødselsnummer og kontonummer fjernet. Er det denne teksten
+              som er sendt til Claude, står det i teksten under.
+            </p>
+            {workspace.documents.map((document) => (
+              <details key={document.id} className="flag til_info" style={{ borderLeftColor: 'var(--border)' }}>
+                <summary>
+                  <span className="row1">
+                    <span className="chip">{document.kind}</span>
+                    <span className="muted small">
+                      {document.pageCount === null ? '' : `${document.pageCount} sider · `}
+                      lagt inn {document.addedAt.slice(0, 10)}
+                    </span>
+                  </span>
+                  <span className="title">{document.name}</span>
+                  <span className="more">Vis hva vi leste ▾</span>
+                </summary>
+                <div className="body">
+                  {document.maskedTextPreview === null ? (
+                    <p className="muted">Vi har ingen tekst lagret fra dette dokumentet.</p>
+                  ) : (
+                    <pre
+                      className="calc"
+                      style={{ whiteSpace: 'pre-wrap', fontWeight: 400, fontSize: '0.88rem' }}
+                    >
+                      {document.maskedTextPreview}
+                    </pre>
+                  )}
+                </div>
+              </details>
+            ))}
+          </>
+        ) : null}
+
         <div className="actions">
           <button
             type="button"

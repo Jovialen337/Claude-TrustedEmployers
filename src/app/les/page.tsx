@@ -95,6 +95,12 @@ export default function LesPage() {
       if (proposal.kind === 'kontrakt' && draftContract) next.contract = draftContract;
       if (proposal.kind === 'lonnsslipp' && draftPayslip) next.payslips = [...workspace.payslips, draftPayslip];
       if (proposal.kind === 'vaktplan') next.shifts = [...workspace.shifts, ...draftShifts];
+      // Record the document that was read, so the flags' "Hentet fra" has a matching entry in
+      // the document list, and "Slett alt" really does delete everything.
+      next.documents = [
+        ...workspace.documents.filter((document) => document.id !== proposal.document.id),
+        proposal.document,
+      ];
 
       const stored = await saveWorkspace(next);
       setWorkspace(stored);

@@ -3,7 +3,13 @@ import { createClaudeSend, hasApiKey, modelName } from '@/extraction/claude';
 import { ExtractionError, extractStructured, type ExtractionImage } from '@/extraction/extract';
 import { extractPdfText, isImage, isPdf } from '@/extraction/pdfText';
 import { ExtractedContract, ExtractedPayslip, ExtractedSchedule, EXTRACTION_KINDS, type ExtractionKind } from '@/extraction/schemas';
-import { contractFromExtraction, payslipFromExtraction, shiftsFromExtraction, type Proposal } from '@/extraction/toDomain';
+import {
+  contractFromExtraction,
+  payslipFromExtraction,
+  shiftsFromExtraction,
+  storedDocumentFrom,
+  type Proposal,
+} from '@/extraction/toDomain';
 import { describeRedactions } from '@/privacy/mask';
 import { readWorkspace } from '@/storage/workspaceStore';
 import type { DocumentRef } from '@/domain/schemas';
@@ -46,38 +52,26 @@ export async function POST(request: Request) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const warnings: string[] = [];
   let text = '';
+  let pageCount: number | null = null;
   let image: ExtractionImage | undefined;
 
   if (isPdf(file.name, file.type)) {
     const pdf = await extractPdfText(bytes);
     text = pdf.text;
+    // A scanned PDF has no text layer, and rasterising its pages to send as images is more
+    // machinery than it is worth — so this is refused outright rather than half-handled.
     if (pdf.looksScanned) {
-      if (!allowImage) {
-        return NextResponse.json(
-          {
-            error:
-              'Denne PDF-en ser ut til å være et skannet bilde uten tekst. Vi kan lese den som bilde, ' +
-              'men da kan vi ikke fjerne fødselsnummer eller kontonummer først. Kryss av for at du ' +
-              'godtar det, eller legg inn opplysningene selv.',
-            needsImageConsent: true,
-          },
-          { status: 422 },
-        );
-      }
-      warnings.push(
-        'PDF-en hadde ingen tekst, så den ble lest som bilde. Da kunne vi ikke fjerne fødselsnummer ' +
-          'eller kontonummer før den ble sendt.',
-      );
-      // A scanned PDF page cannot be passed as an image block, so we cannot read it here.
       return NextResponse.json(
         {
           error:
-            'Vi klarte ikke å hente tekst fra denne PDF-en. Ta gjerne et skjermbilde eller et foto av ' +
-            'siden og last opp det i stedet, eller legg inn opplysningene selv.',
+            'Denne PDF-en ser ut til å være et skannet bilde uten tekst, så vi finner ingenting å lese ' +
+            'i den. Ta gjerne et skjermbilde eller et foto av siden og last opp det i stedet — eller ' +
+            'legg inn opplysningene selv.',
         },
         { status: 422 },
       );
     }
+    pageCount = pdf.pages.length;
   } else if (isImage(file.type)) {
     if (!allowImage) {
       return NextResponse.json(
@@ -137,6 +131,12 @@ export async function POST(request: Request) {
         warnings,
         redactionSummary: describeRedactions(outcome.redactions),
         documentName: file.name,
+        document: storedDocumentFrom({
+          ref: documentRef,
+          kind: documentRef.kind,
+          pageCount,
+          maskedTextPreview: outcome.maskedTextPreview,
+        }),
       };
       return NextResponse.json(proposal);
     }
@@ -150,6 +150,12 @@ export async function POST(request: Request) {
         warnings,
         redactionSummary: describeRedactions(outcome.redactions),
         documentName: file.name,
+        document: storedDocumentFrom({
+          ref: documentRef,
+          kind: documentRef.kind,
+          pageCount,
+          maskedTextPreview: outcome.maskedTextPreview,
+        }),
       };
       return NextResponse.json(proposal);
     }
@@ -164,6 +170,12 @@ export async function POST(request: Request) {
       warnings,
       redactionSummary: describeRedactions(outcome.redactions),
       documentName: file.name,
+      document: storedDocumentFrom({
+        ref: documentRef,
+        kind: documentRef.kind,
+        pageCount,
+        maskedTextPreview: outcome.maskedTextPreview,
+      }),
     };
     return NextResponse.json(proposal);
   } catch (error) {

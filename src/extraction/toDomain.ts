@@ -10,6 +10,8 @@ import {
   Contract,
   Payslip,
   Shift,
+  StoredDocument,
+  type DocumentKind,
   type DocumentRef,
   type Supplement,
 } from '../domain/schemas';
@@ -165,6 +167,28 @@ export function shiftsFromExtraction(
   return { shifts, skipped };
 }
 
+/**
+ * The document itself, so that confirming an extraction also records *what* was read —
+ * otherwise a flag can point at "Lønnsslipp juli.pdf" while the app's own list of documents
+ * stays empty, and "Slett alt" has nothing to delete.
+ */
+export function storedDocumentFrom(options: {
+  ref: DocumentRef;
+  kind: DocumentKind;
+  pageCount: number | null;
+  maskedTextPreview: string | null;
+  now?: string;
+}): StoredDocument {
+  return StoredDocument.parse({
+    id: options.ref.docId,
+    name: options.ref.docName,
+    kind: options.kind,
+    pageCount: options.pageCount,
+    addedAt: options.now ?? new Date().toISOString(),
+    maskedTextPreview: options.maskedTextPreview,
+  });
+}
+
 /** Everything a confirmation screen needs before anything is written to the workspace. */
 export interface Proposal {
   kind: 'kontrakt' | 'lonnsslipp' | 'vaktplan';
@@ -175,4 +199,6 @@ export interface Proposal {
   warnings: string[];
   redactionSummary: string;
   documentName: string;
+  /** Recorded in the workspace when the user confirms. */
+  document: StoredDocument;
 }

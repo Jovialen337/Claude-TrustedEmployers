@@ -9,6 +9,7 @@
  * by the overtime rule, and tillegg by the supplements rule, so nothing double counts.
  */
 import { hoursInRange } from '../aggregate';
+import { hourlyRateExplanation } from '../derive';
 import { formatHours, formatKr, hoursTimesRate, roundHours } from '../money';
 import { CATEGORY_LABELS, type Flag, type PayslipCategory } from '../schemas';
 import { isWithin } from '../time';
@@ -66,7 +67,7 @@ export const scheduledVsPaid: RuleFn = (context: RuleContext): Flag[] => {
               ev('Jobbet i perioden', formatHours(worked)),
               ev('Betalt i perioden', formatHours(paid)),
               ev('Differanse', formatHours(missing)),
-              ev('Timelønn', `${formatKr(rate)} (fra kontrakten din)`),
+              ev('Timelønn', `${formatKr(rate)} (${hourlyRateExplanation(context.contract)})`),
               ...(context.contract.paidBreak
                 ? [ev('Pauser', 'Kontrakten sier at pausene er betalt, så de er regnet som arbeidstid.')]
                 : []),

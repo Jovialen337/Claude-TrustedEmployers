@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AGREED_TERM_KEYS, describeInvalidTerms, parseAgreedTerms, type AgreedTermInput } from '@/domain/agreedTerms';
 
-function input(overrides: Partial<AgreedTermInput> = {}): AgreedTermInput {
+function input(): AgreedTermInput {
   return Object.fromEntries(AGREED_TERM_KEYS.map((key) => [key, ''])) as AgreedTermInput;
 }
 

@@ -86,3 +86,11 @@ from the first unticked box. Do not start over.
 - 2026-09-24 — Second follow-up done: eight new rules and two extended ones, all verified against
   secondary sources first (§ 10-12 marked ikke_verifisert, the one search could not confirm).
   225 tests pass. The demo now shows 22 findings with the money totals unchanged.
+
+- [x] 19. Audit: every flow driven against a running app (34 checks), gaps found and fixed
+- [x] 20. `npm run smoke` — an end-to-end check a contributor can run
+
+- 2026-09-24 — Audit round: 34 interactive checks, all passing after fixes. Four gaps found and
+  fixed: documents were never registered outside the demo, form labels were not associated with
+  their controls, the derived hourly rate was shown without its derivation, and five exported
+  helpers plus one dead branch were unused. 230 unit tests and 26 smoke checks pass.

@@ -349,3 +349,37 @@ extended.
   statute gets more than a note. The demo shows this: 48 hours of night work, reported as til_info.
 - **2026-09-21 — § 10-12 is marked `ikke_verifisert`.** It was the one provision the searches did
   not confirm, so the ruleset says so rather than implying the same level of checking as the rest.
+
+## Audit of what actually works
+
+Asked to confirm the functions function and to find what was missing, every flow was driven
+against a running app rather than trusted from the unit tests. 34 interactive checks; four real
+gaps came out of it.
+
+- **2026-09-24 — `workspace.documents` was written only by the demo.** Uploads set a
+  `documentRef` on the contract, payslip or shifts, so a flag could say "Hentet fra: Lønnsslipp
+  juli 2026.pdf" while the app's own document list stayed empty and "Slett alt" had no documents
+  to delete. Both upload paths now return a `StoredDocument` that the confirm step records, and
+  the settings page lists them with the masked text that was read — which also closes the
+  privacy loop, since the user can now see exactly what left the machine.
+- **2026-09-24 — `Field` rendered a `<label>` with no `htmlFor`.** Every form control in the app
+  was unlabelled as far as a screen reader is concerned, and clicking a label focused nothing.
+  `Field` now generates an id, ties the label to a single control with `htmlFor`, and wires the
+  help text through `aria-describedby`. A field holding a *group* of controls (radio buttons,
+  checkboxes) keeps its own per-control labels and gets a plain heading, because a label
+  pointing at one of several controls would be worse than none. Found while writing audit
+  selectors: `getByLabel` could not find anything.
+- **2026-09-24 — `hourlyRateExplanation` existed but was never shown.** For a monthly salary the
+  hourly rate used in every money estimate is *derived*, and a derived number should not appear
+  without its derivation. The evidence row now reads `246,15 kr (månedslønn × 12 / (37,5 t/uke ×
+  52 uker))`.
+- **2026-09-24 — Dead code removed.** `krFromOre`, `minutesToHours`, `compareDates`,
+  `categoryHours` and `draftMessageFooterNote` were exported and never used; the scanned-PDF
+  branch in the extract route pushed a warning and then returned an error regardless. Two unused
+  locals in tests were cleaned up too, and `tsc --noUnusedLocals` is now clean.
+- **2026-09-24 — Added `npm run smoke`.** The repo had unit tests and my own browser session, but
+  nothing a contributor could run to check the whole chain. `scripts/smoke.mjs` drives every API
+  route against a running app with no dependencies and no browser: empty state, saving a
+  contract, uploading a schedule, the check (including that every money finding's calculation
+  produces its own amount and every finding cites a source), the PDF, a rule override, the demo's
+  expected 22 findings and 6 436,38 kr, and deleting everything.

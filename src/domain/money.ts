@@ -37,10 +37,6 @@ export function parseHoursInput(text: string): number | null {
   return ore === null ? null : ore / 100;
 }
 
-export function krFromOre(ore: number): number {
-  return ore / 100;
-}
-
 /** Multiply øre by a factor (e.g. 0.4 for an overtime supplement), rounded to whole øre. */
 export function mulOre(ore: number, factor: number): number {
   return Math.round(ore * factor);
@@ -104,8 +100,4 @@ export function formatHours(hours: number): string {
 /** 40 -> "40 %", 82.5 -> "82,5 %". Only a trailing ",0" is dropped, so 20.08 stays "20,08 %". */
 export function formatPercent(value: number): string {
   return `${formatHoursNumber(value).replace(/,0$/, '')} %`;
-}
-
-export function minutesToHours(minutes: number): number {
-  return minutes / 60;
 }

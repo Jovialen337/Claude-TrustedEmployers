@@ -6,7 +6,7 @@ import { weekBuckets } from '@/domain/aggregate';
 import { contractedHoursPerWeek } from '@/domain/derive';
 import { parseShiftPaste } from '@/domain/importShifts';
 import { formatHours } from '@/domain/money';
-import { Shift, type ShiftKind, type Workspace } from '@/domain/schemas';
+import { Shift, type ShiftKind, type StoredDocument, type Workspace } from '@/domain/schemas';
 import { formatDateShort, isoWeek, isoWeekKey, shiftWorkedHours, WEEKDAY_NAMES, weekdayIso } from '@/domain/time';
 import { Field, Notice, Spinner } from '../_components/bits';
 import { fetchWorkspace, newId, saveWorkspace } from '../_lib/client';
@@ -29,7 +29,12 @@ export default function VakterPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   /** What the uploaded file gave us, shown for confirmation before anything is saved. */
-  const [proposed, setProposed] = useState<{ shifts: Shift[]; documentName: string; readAs: string } | null>(null);
+  const [proposed, setProposed] = useState<{
+    shifts: Shift[];
+    documentName: string;
+    readAs: string;
+    document: StoredDocument;
+  } | null>(null);
 
   useEffect(() => {
     fetchWorkspace().then(setWorkspace).catch((e: Error) => setError(e.message));
@@ -106,7 +111,12 @@ export default function VakterPage() {
         setPasteErrors(payload.errors ?? []);
         return;
       }
-      setProposed({ shifts: payload.shifts, documentName: payload.documentName, readAs: payload.readAs });
+      setProposed({
+        shifts: payload.shifts,
+        documentName: payload.documentName,
+        readAs: payload.readAs,
+        document: payload.document,
+      });
       setPasteErrors(payload.errors ?? []);
     } catch (e) {
       setError((e as Error).message);
@@ -117,12 +127,25 @@ export default function VakterPage() {
 
   async function onConfirmUpload() {
     if (!workspace || !proposed) return;
-    await persist(
-      [...workspace.shifts, ...proposed.shifts],
-      `La inn ${proposed.shifts.length} vakter fra ${proposed.documentName}.`,
-    );
-    setProposed(null);
-    setFile(null);
+    setError(null);
+    try {
+      // The file is recorded alongside the shifts, so it shows up in the document list and
+      // disappears with "Slett alt".
+      const next = await saveWorkspace({
+        ...workspace,
+        shifts: [...workspace.shifts, ...proposed.shifts],
+        documents: [
+          ...workspace.documents.filter((document) => document.id !== proposed.document.id),
+          proposed.document,
+        ],
+      });
+      setWorkspace(next);
+      setMessage(`La inn ${proposed.shifts.length} vakter fra ${proposed.documentName}.`);
+      setProposed(null);
+      setFile(null);
+    } catch (e) {
+      setError((e as Error).message);
+    }
   }
 
   if (workspace === null) return <Spinner />;

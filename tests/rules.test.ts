@@ -5,7 +5,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatKr } from '@/domain/money';
 import {
-  HOURLY_RATE_ORE,
   check,
   contract,
   flagsFor,

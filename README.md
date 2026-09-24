@@ -36,6 +36,17 @@ flere innlagte feil. Du kan slette alt igjen under **Innstillinger → Slett alt
 npm run dev          # utviklingsserver med automatisk oppdatering
 npm test             # kjører alle testene
 npm run typecheck    # sjekker typene
+npm run smoke        # kjører hele kjeden mot en app som alt kjører
+```
+
+`npm run smoke` går gjennom alt en bruker gjør — tomt arbeidsrom, lagre kontrakt, laste opp
+vaktplan, kjøre sjekken, hente PDF-en, skru av en regel, laste demodata og slette alt — mot en
+app som kjører. Den trenger ingen pakker og ingen nettleser. Start appen i et annet vindu først,
+og pek den mot en egen datamappe om du har data du vil beholde:
+
+```bash
+LONNSSJEKK_DATA_DIR=.data-smoke npm start
+npm run smoke
 ```
 
 Merk: utviklingsserveren bruker en WebSocket-forbindelse til automatisk oppdatering. I noen
@@ -228,6 +239,7 @@ src/demo/        den oppdiktede demobrukeren med innlagte feil
 src/app/         Next.js-sider (norsk) og API-ruter
 rules/           regelsettet med terskler, forklaringer og kilder
 tests/           enhetstester, inkludert de vanskelige tilfellene og hele demoen
+scripts/smoke.mjs  ende-til-ende-sjekk mot en app som kjører, uten pakker og uten nettleser
 ```
 
 Regler under `src/domain/` gjør ingen nettverkskall, leser ingen klokke og bruker ingen
