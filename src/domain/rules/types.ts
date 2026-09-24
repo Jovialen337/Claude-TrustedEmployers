@@ -35,6 +35,8 @@ export interface RuleContext {
 
   /** The span actually covered by data. Partial weeks/months at the edges are not flagged. */
   dataRange: { start: DateStr; end: DateStr } | null;
+  /** How many whole ISO weeks lie inside the data range. */
+  totalWeeksObserved: number;
 }
 
 export type RuleFn = (context: RuleContext) => Flag[];

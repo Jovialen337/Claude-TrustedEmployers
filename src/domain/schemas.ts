@@ -59,6 +59,23 @@ export const Supplement = z.object({
   source: z.string(),
 });
 
+export const EMPLOYMENT_TYPES = ['fast', 'midlertidig'] as const;
+export const EmploymentType = z.enum(EMPLOYMENT_TYPES);
+
+/**
+ * AML § 10-12 exempts a leading or particularly independent position from most of chapter 10
+ * (working hours, overtime, rest, breaks). The exemption is often claimed for positions that
+ * do not qualify, so the app asks rather than assumes, and says so when it applies.
+ */
+export const WORKING_TIME_EXEMPTIONS = ['ingen', 'ledende', 'saerlig_uavhengig'] as const;
+export const WorkingTimeExemption = z.enum(WORKING_TIME_EXEMPTIONS);
+
+export const WORKING_TIME_EXEMPTION_LABELS: Record<WorkingTimeExemption, string> = {
+  ingen: 'Vanlig stilling — arbeidstidsreglene gjelder',
+  ledende: 'Ledende stilling (AML § 10-12 første ledd)',
+  saerlig_uavhengig: 'Særlig uavhengig stilling (AML § 10-12 andre ledd)',
+};
+
 export const Wage = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('hourly'), amountOre: Ore.nonnegative() }),
   z.object({ kind: z.literal('monthly'), amountOre: Ore.nonnegative() }),
@@ -108,6 +125,25 @@ export const Contract = z.object({
   /* Rett til større stilling (AML § 14-4 a) */
   largerPositionLookbackMonths: z.number().positive().nullable().default(null),
 
+  /* Søndags- og nattarbeid (AML § 10-10, § 10-11) */
+  sundayWorkAgreement: z.boolean().default(false),
+  nightWorkAgreement: z.boolean().default(false),
+
+  /* Minstelønn i allmenngjort bransje (allmenngjøringsloven) */
+  allmenngjortMinimumHourlyOre: Ore.nonnegative().nullable().default(null),
+
+  /* Opplysninger arbeidsavtalen skal inneholde (AML § 14-6) */
+  jobTitle: z.string().nullable().default(null),
+  workplace: z.string().nullable().default(null),
+  employmentType: EmploymentType.default('fast'),
+  /** Grunnlaget for midlertidig ansettelse. Mangler det, skal stillingen regnes som fast. */
+  temporaryBasis: z.string().nullable().default(null),
+  workingTimeExemption: WorkingTimeExemption.default('ingen'),
+  noticePeriodMonths: z.number().nonnegative().nullable().default(null),
+  probationMonths: z.number().nonnegative().nullable().default(null),
+  payDayOfMonth: z.number().int().min(1).max(31).nullable().default(null),
+  industry: z.string().nullable().default(null),
+
   /** null = kontrakten sier ingenting, og ferielovens sats brukes. */
   feriepengerRatePercent: z.number().nonnegative().nullable().default(null),
   supplements: z.array(Supplement).default([]),
@@ -138,6 +174,22 @@ export const NO_AGREED_TERMS = {
   paidBreak: false,
   largerPositionLookbackMonths: null,
   feriepengerRatePercent: null,
+  sundayWorkAgreement: false,
+  nightWorkAgreement: false,
+  allmenngjortMinimumHourlyOre: null,
+} as const;
+
+/** Contract details the law requires but that no rule computes with. */
+export const NO_CONTRACT_DETAILS = {
+  jobTitle: null,
+  workplace: null,
+  employmentType: 'fast',
+  temporaryBasis: null,
+  workingTimeExemption: 'ingen',
+  noticePeriodMonths: null,
+  probationMonths: null,
+  payDayOfMonth: null,
+  industry: null,
 } as const;
 
 export const Shift = z.object({
@@ -172,6 +224,10 @@ export const PAYSLIP_CATEGORIES = [
   'helligdagstillegg',
   'fastlonn',
   'feriepenger',
+  /** Trekk i lønn. Lovlig bare i tilfellene i AML § 14-15 andre ledd. */
+  'trekk',
+  /** Overtidstimer tatt ut som fri. Tillegget skal fortsatt betales i penger. */
+  'avspasering',
   'annet',
 ] as const;
 export const PayslipCategory = z.enum(PAYSLIP_CATEGORIES);
@@ -205,6 +261,8 @@ export const CATEGORY_LABELS: Record<PayslipCategory, string> = {
   helligdagstillegg: 'Helligdagstillegg',
   fastlonn: 'Fastlønn',
   feriepenger: 'Feriepenger',
+  trekk: 'Trekk i lønn',
+  avspasering: 'Avspasering (overtid tatt ut som fri)',
   annet: 'Annet',
 };
 
@@ -236,10 +294,18 @@ export const RULE_IDS = [
   'overtime',
   'rest_periods',
   'breaks',
+  'sunday_work',
+  'night_work',
   'actual_hours_vs_contract',
+  'temporary_employment',
   'scheduled_vs_paid',
+  'wage_deductions',
+  'minimum_wage',
   'supplements',
   'feriepenger',
+  'holiday',
+  'contract_contents',
+  'working_time_exemption',
 ] as const;
 export const RuleId = z.enum(RULE_IDS);
 
@@ -364,6 +430,8 @@ export type RuleOverride = z.infer<typeof RuleOverride>;
 export type Evidence = z.infer<typeof Evidence>;
 export type Calculation = z.infer<typeof Calculation>;
 export type Flag = z.infer<typeof Flag>;
+export type EmploymentType = z.infer<typeof EmploymentType>;
+export type WorkingTimeExemption = z.infer<typeof WorkingTimeExemption>;
 export type Settings = z.infer<typeof Settings>;
 export type Workspace = z.infer<typeof Workspace>;
 

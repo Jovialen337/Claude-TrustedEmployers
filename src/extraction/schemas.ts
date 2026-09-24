@@ -47,6 +47,15 @@ export const ExtractedContract = z.object({
   paidBreak: z.boolean().nullable().default(null),
   feriepengerRatePercent: nullableNumber.default(null),
 
+  /* Opplysninger arbeidsavtalen skal inneholde (AML § 14-6) */
+  jobTitle: nullableString.default(null),
+  workplace: nullableString.default(null),
+  employmentType: z.enum(['fast', 'midlertidig']).nullable().default(null),
+  temporaryBasis: nullableString.default(null),
+  noticePeriodMonths: nullableNumber.default(null),
+  probationMonths: nullableNumber.default(null),
+  payDayOfMonth: nullableNumber.default(null),
+
   supplements: z.array(ExtractedSupplement),
   /** Anything the model was unsure about, shown to the user next to the fields. */
   notes: z.array(z.string()),

@@ -86,6 +86,24 @@ export function contractFromExtraction(
     paidBreak: extracted.paidBreak ?? existing?.paidBreak ?? false,
     largerPositionLookbackMonths: existing?.largerPositionLookbackMonths ?? null,
     feriepengerRatePercent: extracted.feriepengerRatePercent ?? existing?.feriepengerRatePercent ?? null,
+    sundayWorkAgreement: existing?.sundayWorkAgreement ?? false,
+    nightWorkAgreement: existing?.nightWorkAgreement ?? false,
+    allmenngjortMinimumHourlyOre: existing?.allmenngjortMinimumHourlyOre ?? null,
+
+    jobTitle: extracted.jobTitle ?? existing?.jobTitle ?? null,
+    workplace: extracted.workplace ?? existing?.workplace ?? null,
+    employmentType: extracted.employmentType ?? existing?.employmentType ?? 'fast',
+    temporaryBasis: extracted.temporaryBasis ?? existing?.temporaryBasis ?? null,
+    // § 10-12 is never inferred from a document: the app asks the worker, because the
+    // exemption turns off the working-time rules entirely.
+    workingTimeExemption: existing?.workingTimeExemption ?? 'ingen',
+    noticePeriodMonths: extracted.noticePeriodMonths ?? existing?.noticePeriodMonths ?? null,
+    probationMonths: extracted.probationMonths ?? existing?.probationMonths ?? null,
+    payDayOfMonth:
+      extracted.payDayOfMonth !== null && extracted.payDayOfMonth >= 1 && extracted.payDayOfMonth <= 31
+        ? Math.round(extracted.payDayOfMonth)
+        : (existing?.payDayOfMonth ?? null),
+    industry: existing?.industry ?? null,
     supplements: kept.length > 0 ? kept : (existing?.supplements ?? []),
     documentRef: documentRef ?? existing?.documentRef ?? null,
   };

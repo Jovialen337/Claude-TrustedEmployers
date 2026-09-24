@@ -89,13 +89,23 @@ den ikke kan fravikes.
 | Overtidstillegg | avtalt sats (ofte 50 % eller 100 %) | minst 40 % (AML § 10-6) |
 | Når overtid begynner | avtalt arbeidstid per døgn og uke | 9 t og 40 t (AML § 10-4) |
 | Hvor mye overtid som er lov | avtalt maksgrense | 10 t / 25 t / 200 t (AML § 10-6) |
+| Overtid tatt ut som fri — tillegget skal likevel betales | — | AML § 10-6 |
 | **Merarbeid** skilt fra overtid | avtalt arbeidstid | AML § 14-4 a |
 | Arbeidsfri mellom vaktene | avtalt fri per døgn og uke | 11 t og 35 t (AML § 10-8) |
 | Pauser, og om pausen er betalt | avtalt pausetid og betalt pause | 5,5 t / 30 min (AML § 10-9) |
+| Søndags- og helgedagsarbeid — fri annenhver | skriftlig søndagsavtale | AML § 10-10, § 10-8 |
+| Nattarbeid mellom 21 og 06, og grensen for nattarbeidstakere | avtale om nattarbeid | AML § 10-11 |
 | Hver time betalt, riktig kategori og sats | avtalt timelønn | — |
+| Trekk i lønn | skriftlig avtale om det konkrete trekket | AML § 14-15, HR-2021-2532-A |
+| Minstelønn i allmenngjort bransje | satsen du legger inn | allmenngjøringsloven |
 | Kvelds-, natt-, helge- og helligdagstillegg | **bare kontrakten eller tariffavtalen** | loven gir ingen slike tillegg |
 | Feriepenger | avtalt sats | minst 10,2 % (ferieloven § 10) |
+| Ferien selv — fikk du den? | — | 25 virkedager, 3 uker sammenhengende (ferieloven § 5, § 7) |
+| Midlertidig ansettelse: grunnlag og treårsregelen | ansettelsesform og grunnlag | AML § 14-9 |
 | Rett til større stilling | avtalt periode | tolv måneder (AML § 14-4 a) |
+| Hva avtalen skal inneholde, og fristene for den | — | AML § 14-6, § 14-5 |
+| Oversikt over arbeidstiden, og arbeidsplan to uker før | — | AML § 10-7, § 10-3 |
+| Unntak for ledende eller særlig uavhengig stilling | du svarer selv | AML § 10-12 |
 
 Legg inn dine egne vilkår under **Kontrakt → «Avtalte vilkår som avviker fra loven»**. Feltene
 du lar stå tomme, betyr «kontrakten sier ingenting», og da gjelder loven.
@@ -104,15 +114,9 @@ Er et vilkår i kontrakten dårligere enn loven tillater — for eksempel 25 % o
 timers arbeidsfri eller feriepenger under 10,2 % — regner vi med lovens krav og sier fra om det
 som et eget funn. Et slikt vilkår i en arbeidsavtale er ikke gyldig.
 
-Hvert funn får ett av tre nivåer:
-
-- **Sannsynlig feil** — vi kan regne på det, og det ser ut som en feil.
-- **Bør sjekkes** — noe stemmer ikke helt, men det kan finnes en god forklaring.
-- **Til info** — verdt å vite, ikke et krav.
-
-Alle terskler og satser ligger i én fil, [`rules/no_default.json`](rules/no_default.json), med
-kilde og forklaring på hver regel. Du kan slå av regler under **Innstillinger**, og legge inn
-dine egne grenser fra kontrakt eller tariffavtale.
+Har du oppgitt at stillingen er **ledende eller særlig uavhengig**, slår vi av sjekkene for
+overtid, hviletid, pauser, søndagsarbeid og nattarbeid, og sier tydelig at vi har gjort det.
+Unntaket er smalere enn mange tror, så vi ber deg bekrefte det selv i stedet for å gjette.
 
 ### Hvordan tallene blir til
 
@@ -128,20 +132,48 @@ dine egne grenser fra kontrakt eller tariffavtale.
 
 ## Hva sjekkes *ikke*
 
-Vær klar over grensene før du tar noe videre:
+Vær klar over grensene før du tar noe videre.
+
+**Lover og regler vi ikke kan sjekke med disse dataene.** En arbeidsavtale, en vaktplan og noen
+lønnsslipper sier ingenting om dette, så vi later ikke som om vi vurderer det:
+
+- **Oppsigelse, avskjed og stillingsvern** (AML kapittel 15) — krever saksgang og dokumenter vi
+  ikke har. Vi sjekker bare at oppsigelsesfristen står i avtalen.
+- **Sykepenger, egenmelding og sykefravær** (folketrygdloven) — vi vet ikke hvorfor en vakt ikke
+  ble jobbet.
+- **Permittering, foreldrepermisjon og annen permisjon** (AML kapittel 12) — samme grunn.
+- **Pensjon og OTP** — står ikke på lønnsslippen i en form vi kan regne på.
+- **Skattetrekk og skattekort** — vi sjekker ikke om skatten er riktig beregnet.
+- **HMS, verneutstyr, arbeidsmiljø og varsling** (AML kapittel 2–7 og 2 A) — ikke målbart i timer
+  og kroner.
+- **Diskriminering og likelønn** (likestillings- og diskrimineringsloven) — krever sammenligning
+  med andre ansatte.
+- **Innleie fra bemanningsforetak og likebehandling** (AML § 14-12 a) — krever lønnsdata fra
+  innleiebedriften.
+- **Fortrinnsrett ved nedbemanning og ved nyansettelser** (AML § 14-2, § 14-3) — avhenger av hva
+  som skjer i virksomheten.
+- **Aldersgrenser for unge arbeidstakere** (AML kapittel 11) — vi spør ikke om alderen din.
+- **Om nattarbeid eller søndagsarbeid faktisk var «nødvendig»** — det er en vurdering av
+  virksomheten, ikke av tallene. Vi viser mønsteret og sier hva loven krever.
+
+**Grenser i det vi faktisk sjekker:**
 
 - **Vi kan bare sjekke det du har lagt inn.** Mangler en lønnsslipp, en vakt eller et tillegg,
   blir sjekken ufullstendig. Halve uker i kantene av dataene flagges aldri.
 - **Betalte timer fordeles ikke på uker.** En månedsslipp sier ikke hvilke timer som hørte til
   hvilken uke, så sammenligningen mot lønn gjøres per lønnsperiode. Vi gjetter ikke.
-- **Skatt, trekk, pensjon, sykepenger, feriedager, permisjon og oppsigelse** er ikke med.
-- **Tillegg gjettes aldri.** Kvelds-, natt-, helge- og helligdagstillegg følger av kontrakt
-  eller tariffavtale, ikke av loven. Har du ikke lagt dem inn, sjekkes de ikke.
-- **Tariffavtaler forstås ikke automatisk.** Har du en tariffavtale med andre grenser enn
-  loven, må du legge dem inn selv.
+- **Tillegg gjettes aldri.** Kvelds-, natt-, helge- og helligdagstillegg følger av kontrakt eller
+  tariffavtale, ikke av loven. Har du ikke lagt dem inn, sjekkes de ikke.
+- **Minstelønnssatser leveres ikke.** Satsene i allmenngjorte bransjer endres jevnlig og avhenger
+  av alder, fagbrev og erfaring. Du legger inn din sats fra arbeidstilsynet.no.
+- **Tariffavtaler forstås ikke automatisk.** Har du en tariffavtale med andre grenser enn loven,
+  må du legge dem inn selv.
+- **Ferie kan vi bare gjette på.** En luke i vaktplanen er ikke bevis på at du hadde ferie, og
+  mangel på luke er ikke bevis på at du ikke hadde det. Derfor er ferie alltid «til info».
 - **«Rett til større stilling» avgjøres ikke her.** Vi viser at du kan ha et krav etter § 14-4 a,
-  og hvor mange uker vi faktisk har sett på. Ferie og sykefravær teller ikke med i beregningen,
-  og tolvmånedersperioden regnes fra du fremmer kravet.
+  og hvor mange uker vi faktisk har sett på. Ferie og sykefravær teller ikke med i beregningen.
+- **Om ansettelsen har vært sammenhengende** vet vi ikke, så treårsregelen i § 14-9 er et signal
+  om å undersøke, ikke en konklusjon.
 - **Regelteksten er kontrollert mot omtale av lovene, ikke mot lovdata.no**, fordi maskinen som
   bygget dette ikke hadde tilgang dit. Hver regel sier selv hvordan den er kontrollert. Se
   [DECISIONS.md](DECISIONS.md).
@@ -150,8 +182,6 @@ Vær klar over grensene før du tar noe videre:
   høyeste.
 - **Ingen juridisk vurdering.** Tallene er et utgangspunkt for en samtale — med arbeidsgiver,
   tillitsvalgt eller fagforening.
-
----
 
 ## Personvern
 

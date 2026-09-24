@@ -41,6 +41,14 @@ Se også etter vilkår som avviker fra loven, og ta dem med BARE hvis de står i
 - når det gis pause, hvor lang den er, og om pausen er betalt (regnes som arbeidstid)
 - feriepengesats i prosent (10,2 % er lovens minimum, 12 % ved fem ukers ferie)
 
+Ta også med disse opplysningene, som arbeidsavtalen skal inneholde:
+- stillingstittel eller beskrivelse av arbeidet
+- arbeidsplass (adresse eller sted)
+- om ansettelsen er fast eller midlertidig, og ved midlertidig: grunnlaget som står i avtalen
+- oppsigelsesfrist i måneder
+- prøvetid i måneder
+- hvilken dag i måneden lønna utbetales
+
 Står ingenting om et av disse punktene, skal feltet være null. Ikke fyll inn lovens verdi —
 appen gjør det selv, og skiller mellom «dette står i kontrakten» og «dette følger av loven».`,
 
@@ -83,6 +91,9 @@ export function schemaHint(kind: ExtractionKind): string {
 "agreedDailyRestHours": number|null, "agreedWeeklyRestHours": number|null,
 "breakRequiredAfterHours": number|null, "minBreakMinutesLongDay": number|null,
 "paidBreak": boolean|null, "feriepengerRatePercent": number|null,
+"jobTitle": string|null, "workplace": string|null, "employmentType": "fast"|"midlertidig"|null,
+"temporaryBasis": string|null, "noticePeriodMonths": number|null, "probationMonths": number|null,
+"payDayOfMonth": number|null,
 "supplements": [{"label": string, "kind": "kveld"|"natt"|"helg"|"helligdag", "fromTime": "HH:MM"|null,
 "toTime": "HH:MM"|null, "rateKroner": number|null, "ratePercent": number|null, "source": string|null}],
 "notes": string[]}`;

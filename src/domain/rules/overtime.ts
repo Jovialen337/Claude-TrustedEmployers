@@ -256,6 +256,46 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
     }
   }
 
+  /* ------------- 1c. avspasering kan ikke erstatte selve overtidstillegget */
+  for (const summary of context.summaries) {
+    const timeOff = summary.payslip.lines.filter((line) => line.category === 'avspasering');
+    if (timeOff.length === 0) continue;
+    const paidSupplement = summary.byCategory.get('overtid_40')?.amountOre ?? 0;
+    const paidSupplement100 = summary.byCategory.get('overtid_100')?.amountOre ?? 0;
+    if (paidSupplement + paidSupplement100 > 0) continue;
+
+    const hours = roundHours(timeOff.reduce((sum, line) => sum + (line.hours ?? 0), 0));
+    if (hours <= tolerance) continue;
+
+    const calculation = hoursTimesRateCalculation(hours, rate, {
+      factor: supplementPercent / 100,
+      factorLabel: formatPercent(supplementPercent),
+    });
+
+    flags.push(
+      buildFlag(context, {
+        key: `avspasering:${summary.payslip.id}`,
+        title: 'Overtiden er tatt ut som fri, men tillegget mangler',
+        periodLabel: summary.label,
+        periodStart: summary.payslip.periodStart,
+        periodEnd: summary.payslip.periodEnd,
+        message:
+          `Lønnsslippen viser ${formatHours(hours)} avspasering. Du og arbeidsgiver kan avtale at selve ` +
+          `overtidstimene tas ut som fri, men overtidstillegget skal likevel betales i penger — det kan ` +
+          `ikke avspaseres bort. Vi finner ingen overtidslinje med tillegg på denne slippen.`,
+        evidence: [
+          ...timeOff.map((line) => ev(line.label, formatHours(line.hours ?? 0))),
+          ev('Avspasert til sammen', formatHours(hours)),
+          ev('Tillegg', withSource(formatPercent(supplementPercent), supplement)),
+          ev('Overtidstillegg betalt', formatKr(paidSupplement + paidSupplement100)),
+        ],
+        calculation,
+        amountOre: calculation.resultOre,
+        documentRefs: [...refsFromPayslip(summary.payslip), ...contractRef(context)],
+      }),
+    );
+  }
+
   /* ------------------------------------------------- 2. merarbeid, forklart én gang */
   if (merarbeidByWeek.size > 0 && context.contractedWeeklyHours < weeklyLimit) {
     const total = roundHours([...merarbeidByWeek.values()].reduce((a, b) => a + b, 0));

@@ -76,3 +76,13 @@ from the first unticked box. Do not start over.
   Two bugs found by running it: the agreed-terms validation compared form keys with contract
   keys and rejected every blank field, and the feriepenger rule's early return discarded a
   finding it had already collected.
+
+- [x] 17. Every law the data can support: § 10-10 Sunday work, § 10-11 night work, § 14-15 wage
+      deductions, § 14-9 temporary employment, § 14-6/§ 14-5/§ 10-7/§ 10-3 contract contents and
+      records, ferieloven § 5/§ 7 holiday, allmenngjøringsloven minimum wage, § 10-12 exemption,
+      § 10-6 avspasering — 16 rules in total
+- [x] 18. README lists what is NOT checked, with a reason per item
+
+- 2026-09-24 — Second follow-up done: eight new rules and two extended ones, all verified against
+  secondary sources first (§ 10-12 marked ikke_verifisert, the one search could not confirm).
+  225 tests pass. The demo now shows 22 findings with the money totals unchanged.

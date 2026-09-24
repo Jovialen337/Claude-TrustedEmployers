@@ -301,3 +301,51 @@ plus 1 488,75 kr in hours never given and 630,00 kr of feriepenger to check. ✔
   `src/domain/agreedTerms.ts` and is unit tested. Separately, `npm run build` type-checks the
   tests too, and a `Uint8Array` in a new test was not assignable to `BlobPart`; vitest alone
   had not caught it.
+
+## Covering the rest of the law
+
+Asked not to skip any laws, the check now covers every provision that a contract, a schedule
+and payslips can actually support. Eight rules were added (16 in total) and two existing rules
+extended.
+
+- **2026-09-21 — Which provisions were added, and why each is checkable.**
+  - **AML § 10-10 and § 10-8(4) — Sunday and holiday work.** Shifts show the pattern, and the
+    right to time off every other Sunday is a pattern question. Working *whether* Sunday work was
+    "necessary" is a judgement about the business, so the flag is about frequency and says what
+    the law requires. A written agreement (26-week averaging) downgrades it to information.
+  - **AML § 10-11 — night work.** Night is 21:00–06:00, so shift times give it exactly. Someone
+    with more than three hours at night on three or more shifts is treated as a
+    *nattarbeidstaker*, whose hours must average at most 8 per 24 hours over four weeks.
+  - **AML § 14-15(2) — deductions from pay.** A `trekk` line, or any negative amount, is flagged
+    with the closed list of lawful deductions and the Supreme Court's holding
+    (HR-2021-2532-A) that the agreement must name the actual deduction. No money is claimed:
+    lawfulness depends on an agreement the app cannot see.
+  - **AML § 14-9 — temporary employment.** The contract says whether it is temporary and on what
+    basis; a missing basis and the three-year rule are both checkable. The four-year rule is gone.
+  - **AML § 14-6, § 14-5 — what the contract must contain.** Thirteen required items, checked
+    against what the user has entered, reported as what to go and ask for. It judges no terms.
+  - **AML § 10-7, § 10-3 — the hours record and the two-week work plan.** Rights worth knowing,
+    surfaced when the data shows they are relevant (no shifts entered; planned shifts entered).
+  - **Ferieloven § 5, § 7 — the holiday itself.** A gap in the shift data long enough to be the
+    three-week main holiday. Always "til info", with the message saying plainly that a gap is not
+    proof of holiday and no gap is not proof of none.
+  - **Allmenngjøringsloven — minimum wage.** Nine industries have a statutory minimum. The rates
+    change with age, trade certificate and experience, so **the app ships none**: the user enters
+    the rate from arbeidstilsynet.no and then it is compared. With an allmenngjort industry named
+    and no rate entered, the rule only says where to find it.
+  - **AML § 10-12 — exemption for a leading or particularly independent position.** This one
+    *removes* findings, so it is never inferred from a document: the user answers it. When set,
+    the engine does not run overtime, rest, breaks, Sunday or night work at all, and the flag says
+    which checks were switched off and how narrow the exemption really is.
+  - **AML § 10-6 (avspasering).** Time off may replace the overtime hours, but the supplement must
+    be paid in money — so a payslip with avspasering and no overtime supplement is a claim.
+- **2026-09-21 — What is deliberately not checked is now written down in the README**, with a
+  reason per item: dismissal, sick pay, leave, pension, tax, HMS, discrimination, hired-out
+  workers' equal treatment, preferential rights, and age limits. None of it is derivable from a
+  contract, a schedule and payslips, and pretending otherwise would be worse than silence.
+- **2026-09-21 — Night work on an evening shift is information, not an alarm.** A café closing at
+  22:00 does an hour of night work by the letter of § 10-11 every single shift. Flagging that as
+  "bør sjekkes" would bury the findings that matter, so only a *nattarbeidstaker* under the
+  statute gets more than a note. The demo shows this: 48 hours of night work, reported as til_info.
+- **2026-09-21 — § 10-12 is marked `ikke_verifisert`.** It was the one provision the searches did
+  not confirm, so the ruleset says so rather than implying the same level of checking as the rest.

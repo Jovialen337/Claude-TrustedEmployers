@@ -187,6 +187,53 @@ describe('fra uthentede felt til datamodellen', () => {
     expect(contract.averagingAgreement).toBe(true);
   });
 
+  it('tar med opplysningene arbeidsavtalen skal ha, men gjetter aldri på § 10-12-unntaket', async () => {
+    const send: Send = async () =>
+      JSON.stringify({
+        employer: 'Kafé Nordlys AS',
+        employeeName: 'Kari Nordmann',
+        startDate: '2025-09-01',
+        stillingsprosent: 60,
+        fullTimeHoursPerWeek: 37.5,
+        contractedHoursPerWeek: null,
+        wageKind: 'hourly',
+        wageKroner: 198.5,
+        tariffavtale: null,
+        jobTitle: 'Servitør',
+        workplace: 'Storgata 1',
+        employmentType: 'midlertidig',
+        temporaryBasis: 'Vikar for navngitt ansatt',
+        noticePeriodMonths: 1,
+        probationMonths: 6,
+        payDayOfMonth: 15,
+        supplements: [],
+        notes: [],
+      });
+    const outcome = await extractStructured({ kind: 'kontrakt', text: 'noe', schema: ExtractedContract, send });
+    const { contract } = contractFromExtraction(outcome.data, null, 37.5, null);
+    expect(contract.jobTitle).toBe('Servitør');
+    expect(contract.workplace).toBe('Storgata 1');
+    expect(contract.employmentType).toBe('midlertidig');
+    expect(contract.temporaryBasis).toBe('Vikar for navngitt ansatt');
+    expect(contract.noticePeriodMonths).toBe(1);
+    expect(contract.probationMonths).toBe(6);
+    expect(contract.payDayOfMonth).toBe(15);
+    // Unntaket fra arbeidstidsreglene slår av fem regler, så det skal brukeren svare på selv.
+    expect(contract.workingTimeExemption).toBe('ingen');
+  });
+
+  it('avviser en utbetalingsdag som ikke finnes i en måned', async () => {
+    const send: Send = async () =>
+      JSON.stringify({
+        employer: null, employeeName: null, startDate: null, stillingsprosent: null,
+        fullTimeHoursPerWeek: null, contractedHoursPerWeek: null, wageKind: null, wageKroner: null,
+        tariffavtale: null, payDayOfMonth: 45, supplements: [], notes: [],
+      });
+    const outcome = await extractStructured({ kind: 'kontrakt', text: 'noe', schema: ExtractedContract, send });
+    const { contract } = contractFromExtraction(outcome.data, null, 37.5, null);
+    expect(contract.payDayOfMonth).toBeNull();
+  });
+
   it('lar avtalte vilkår stå åpne når dokumentet ikke nevner dem', async () => {
     // Et dokument som ikke sier noe om overtid skal ikke koste et nytt forsøk, og skal ikke
     // få lovens verdi stemplet inn som om den sto i kontrakten.

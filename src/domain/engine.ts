@@ -10,12 +10,20 @@ import { applyPaidBreak, contractedHoursPerWeek, effectiveHourlyRateOre } from '
 import { applyOverrides, DEFAULT_RULESET } from './ruleset';
 import { actualHoursVsContract } from './rules/actualHours';
 import { breaks } from './rules/breaks';
+import { contractContents } from './rules/contractContents';
 import { feriepenger } from './rules/feriepenger';
+import { holiday } from './rules/holiday';
 import { hoursVsStillingsprosent } from './rules/hoursVsStillingsprosent';
+import { minimumWage } from './rules/minimumWage';
+import { nightWork } from './rules/nightWork';
 import { overtime } from './rules/overtime';
 import { restPeriods } from './rules/rest';
 import { scheduledVsPaid } from './rules/scheduledVsPaid';
+import { sundayWork } from './rules/sundayWork';
 import { supplements } from './rules/supplements';
+import { temporaryEmployment } from './rules/temporaryEmployment';
+import { wageDeductions } from './rules/wageDeductions';
+import { EXEMPTED_RULE_IDS, workingTimeExemption } from './rules/workingTimeExemption';
 import type { RuleContext, RuleFn } from './rules/types';
 import { SEVERITY_ORDER, type DateStr, type Flag, type RuleId, type RuleSet, type Severity, type Workspace } from './schemas';
 import { buildTimeline, type TimelineWeek } from './timeline';
@@ -25,14 +33,22 @@ export const RULE_IMPLEMENTATIONS: Record<RuleId, RuleFn> = {
   overtime,
   rest_periods: restPeriods,
   breaks,
+  sunday_work: sundayWork,
+  night_work: nightWork,
   actual_hours_vs_contract: actualHoursVsContract,
+  temporary_employment: temporaryEmployment,
   scheduled_vs_paid: scheduledVsPaid,
+  wage_deductions: wageDeductions,
+  minimum_wage: minimumWage,
   supplements,
   feriepenger,
+  holiday,
+  contract_contents: contractContents,
+  working_time_exemption: workingTimeExemption,
 };
 
 /** Rules whose amounts are work you did but were not paid for. These make the headline total. */
-export const MONEY_OWED_RULES: RuleId[] = ['scheduled_vs_paid', 'overtime', 'supplements'];
+export const MONEY_OWED_RULES: RuleId[] = ['scheduled_vs_paid', 'overtime', 'supplements', 'minimum_wage'];
 /** Hours your stillingsprosent entitled you to but that you were never given — a separate figure. */
 export const UNDER_SCHEDULED_RULES: RuleId[] = ['hours_vs_stillingsprosent'];
 
@@ -140,11 +156,21 @@ export function runCheck(workspace: Workspace, options: RunCheckOptions = {}): C
     contractedWeeklyHours,
     fullTimeHoursPerWeek: contract.fullTimeHoursPerWeek,
     dataRange,
+    totalWeeksObserved: weeks.filter(
+      (week) => dataRange !== null && week.start >= dataRange.start && week.end <= dataRange.end,
+    ).length,
   };
+
+  // AML § 10-12: a leading or particularly independent position is outside chapter 10, so the
+  // working-time rules are not run at all rather than run and quietly ignored. The exemption
+  // rule itself says which checks were switched off and how narrow the exemption is.
+  const exempted =
+    contract.workingTimeExemption === 'ingen' ? new Set<RuleId>() : new Set<RuleId>(EXEMPTED_RULE_IDS);
 
   const flags: Flag[] = [];
   for (const rule of ruleSet.rules) {
     if (!rule.enabled) continue;
+    if (exempted.has(rule.id)) continue;
     const implementation = RULE_IMPLEMENTATIONS[rule.id];
     flags.push(...implementation({ ...baseContext, rule }));
   }

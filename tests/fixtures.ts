@@ -3,7 +3,7 @@
  * no personnummer and no account numbers anywhere.
  */
 import { runCheck } from '@/domain/engine';
-import { NO_AGREED_TERMS } from '@/domain/schemas';
+import { NO_AGREED_TERMS, NO_CONTRACT_DETAILS } from '@/domain/schemas';
 import type {
   Contract,
   Payslip,
@@ -31,6 +31,8 @@ export function contract(overrides: Partial<Contract> = {}): Contract {
     tariffavtale: null,
     averagingAgreement: false,
     ...NO_AGREED_TERMS,
+  ...NO_CONTRACT_DETAILS,
+    ...NO_CONTRACT_DETAILS,
     supplements: [],
     documentRef: null,
     ...overrides,

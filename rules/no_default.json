@@ -1,7 +1,7 @@
 {
   "id": "no_default",
-  "version": "1.0.0",
-  "name": "Norske standardregler (arbeidsmiljøloven og ferieloven)",
+  "version": "2.0.0",
+  "name": "Norske standardregler (arbeidsmiljøloven, ferieloven og allmenngjøringsloven)",
   "jurisdiction": "NO",
   "fullTimeHoursPerWeek": 37.5,
   "rules": [
@@ -30,7 +30,7 @@
       "id": "overtime",
       "enabled": true,
       "title": "Overtid — minst 40 % tillegg",
-      "explanation": "Jobber du mer enn 9 timer i døgnet eller 40 timer i uka, er timene over dette overtid, og overtid skal ha minst 40 % tillegg på toppen av vanlig timelønn. Merk forskjellen på overtid og merarbeid: er du deltidsansatt og jobber mer enn kontrakten din sier, men fortsatt under lovens grenser, er det merarbeid. Merarbeid skal betales, men gir ikke krav på overtidstillegg etter loven. Grensene og tilleggssatsen hentes fra kontrakten eller tariffavtalen din når de står der — lovens 40 % er et minimum ingen avtale kan gå under, mens arbeidstidsgrensene kan være avtalt både høyere og lavere.",
+      "explanation": "Jobber du mer enn 9 timer i døgnet eller 40 timer i uka, er timene over dette overtid, og overtid skal ha minst 40 % tillegg på toppen av vanlig timelønn. Merk forskjellen på overtid og merarbeid: er du deltidsansatt og jobber mer enn kontrakten din sier, men fortsatt under lovens grenser, er det merarbeid. Merarbeid skal betales, men gir ikke krav på overtidstillegg etter loven. Grensene og tilleggssatsen hentes fra kontrakten eller tariffavtalen din når de står der — lovens 40 % er et minimum ingen avtale kan gå under, mens arbeidstidsgrensene kan være avtalt både høyere og lavere. Avtaler du å ta overtidstimene ut som fri, skal tillegget likevel betales i penger.",
       "severity": "sannsynlig_feil",
       "params": {
         "overtime_supplement_percent": 40,
@@ -67,6 +67,12 @@
           "paragraph": "§ 14-4 a",
           "url": "https://lovdata.no/lov/2005-06-17-62/§14-4a",
           "note": "Merarbeid er timer utover avtalt arbeidstid, men innenfor lovens alminnelige grenser."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-6 tolvte ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-6",
+          "note": "Arbeidsgiver og arbeidstaker kan avtale at overtidstimene tas ut som fri, men tillegget skal betales i penger."
         }
       ],
       "verified": "sekundaerkilde"
@@ -140,6 +146,69 @@
       "verified": "sekundaerkilde"
     },
     {
+      "id": "sunday_work",
+      "enabled": true,
+      "title": "Søndags- og helgedagsarbeid",
+      "explanation": "Arbeid på søn- og helgedager er ikke tillatt med mindre arbeidets art gjør det nødvendig — i servering, butikk og omsorg er det ofte tilfelle. Du skal uansett ha arbeidsfri annenhver søn- og helgedag. En skriftlig avtale kan gi en ordning som i gjennomsnitt gir fri annenhver søn- og helgedag over 26 uker, så lenge den ukentlige friperioden faller på en søn- eller helgedag minst hver fjerde uke.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "free_share_of_sundays": 0.5,
+        "tolerance_hours": 0.25
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-10 andre ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-10",
+          "note": "Arbeid på søn- og helgedager er ikke tillatt med mindre arbeidets art gjør det nødvendig."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-8 fjerde ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-8",
+          "note": "Arbeidstaker skal ha arbeidsfri annenhver søn- og helgedag. Skriftlig avtale kan gi en annen ordning innenfor 26 uker."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "night_work",
+      "enabled": true,
+      "title": "Nattarbeid",
+      "explanation": "Arbeid mellom kl. 21.00 og kl. 06.00 er nattarbeid, og er ikke tillatt med mindre arbeidets art gjør det nødvendig. Jobber du jevnlig mer enn tre timer om natten, regnes du som nattarbeidstaker, og da skal den alminnelige arbeidstiden din i gjennomsnitt ikke overstige åtte timer i løpet av 24 timer, målt over fire uker. Tillegg for nattarbeid følger av kontrakt eller tariffavtale, ikke av loven.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "night_from": "21:00",
+        "night_to": "06:00",
+        "night_worker_hours_per_shift": 3,
+        "regular_night_shifts": 3,
+        "max_average_hours_per_24h": 8,
+        "averaging_weeks": 4,
+        "new_period_after_rest_hours": 11
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-11 første ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-11",
+          "note": "Arbeid mellom kl. 21.00 og kl. 06.00 er nattarbeid."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-11 andre ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-11",
+          "note": "Nattarbeid er ikke tillatt med mindre arbeidets art gjør det nødvendig. Behovet skal drøftes med tillitsvalgte."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-11 fjerde ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-11",
+          "note": "For arbeidstaker som jevnlig arbeider mer enn tre timer om natten skal alminnelig arbeidstid i gjennomsnitt ikke overstige åtte timer per 24 timer, beregnet over fire uker."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
       "id": "actual_hours_vs_contract",
       "enabled": true,
       "title": "Har du krav på større stilling?",
@@ -167,6 +236,37 @@
       "verified": "sekundaerkilde"
     },
     {
+      "id": "temporary_employment",
+      "enabled": true,
+      "title": "Midlertidig ansettelse",
+      "explanation": "Er du midlertidig ansatt, skal avtalen være skriftlig og oppgi grunnlaget for midlertidigheten. Mangler grunnlaget, skal stillingen som hovedregel regnes som fast. Har du vært sammenhengende midlertidig ansatt i mer enn tre år, regnes du som fast ansatt — uansett hva grunnlaget var. Den gamle fireårsregelen gjelder ikke lenger.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "years_to_permanent": 3
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-9 andre ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-9",
+          "note": "Midlertidig ansettelse er bare tillatt på de grunnlagene loven lister opp, og grunnlaget skal stå i arbeidsavtalen."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-9 sjuende ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-9",
+          "note": "Arbeidstaker som har vært sammenhengende midlertidig ansatt i mer enn tre år, skal anses som fast ansatt."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-6 første ledd bokstav e",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-6",
+          "note": "Arbeidsavtalen skal oppgi forventet varighet og grunnlaget for midlertidig ansettelse."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
       "id": "scheduled_vs_paid",
       "enabled": true,
       "title": "Er alle timene du jobbet betalt?",
@@ -189,6 +289,62 @@
           "paragraph": "Avtalt timelønn",
           "url": null,
           "note": "Satsen som sammenlignes hentes fra din egen kontrakt, ikke fra loven."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "wage_deductions",
+      "enabled": true,
+      "title": "Trekk i lønn",
+      "explanation": "Arbeidsgiver kan bare trekke deg i lønn eller feriepenger i de tilfellene loven lister opp: lovbestemte trekk som skatt, fagforeningskontingent, egenandel til pensjons- eller forsikringsordning, erstatning for skade du forsettlig eller grovt uaktsomt har påført, trekk som følger av tariffavtale, eller et beløp som er fastsatt på forhånd i skriftlig avtale. Høyesterett har slått fast at en slik avtale må gjelde det konkrete trekket — en generell standardsetning i arbeidsavtalen er ikke nok. Trekket kan heller ikke være større enn at du har nok igjen å leve av.",
+      "severity": "bor_sjekkes",
+      "params": {
+        "min_amount_ore": 100
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-15 andre ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-15",
+          "note": "Trekk i lønn og feriepenger kan ikke gjøres unntatt i de tilfellene som er listet opp i bokstav a til f."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-15 tredje ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-15",
+          "note": "Trekk etter andre ledd bokstav c til f skal begrenses til den delen av kravet som overstiger det arbeidstakeren med rimelighet trenger til underhold."
+        },
+        {
+          "law": "Høyesterett",
+          "paragraph": "HR-2021-2532-A",
+          "url": "https://www.domstol.no/no/hoyesterett/avgjorelser/2021/hoyesterett-sivil/hr-2021-2532-a/",
+          "note": "Avtalen lønnstrekket bygger på må konkretisere det aktuelle trekket. Standardformuleringer er ikke nok."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "minimum_wage",
+      "enabled": true,
+      "title": "Minstelønn i allmenngjort bransje",
+      "explanation": "Norge har ingen generell minstelønn, men i ni bransjer — blant annet bygg, renhold, overnatting, servering og catering, jordbruk og gartneri, fiskeindustri, elektro og transport — er tariffavtalen allmenngjort. Da gjelder en lovbestemt minstelønn for alle som jobber der, uansett om arbeidsgiver er bundet av tariffavtalen. Satsene endres jevnlig og avhenger av alder, fagbrev og erfaring, så denne appen inneholder ingen satser: du legger inn den som gjelder deg, og så sammenligner vi.",
+      "severity": "sannsynlig_feil",
+      "params": {
+        "tolerance_ore": 50
+      },
+      "sources": [
+        {
+          "law": "Allmenngjøringsloven",
+          "paragraph": "§ 1 og § 6",
+          "url": "https://lovdata.no/lov/1993-06-04-58",
+          "note": "Tariffnemnda kan fastsette at en landsomfattende tariffavtale helt eller delvis skal gjelde for alle arbeidstakere i en bransje."
+        },
+        {
+          "law": "Arbeidstilsynet",
+          "paragraph": "Minstelønnssatser",
+          "url": "https://www.arbeidstilsynet.no/arbeidsforhold/lonn/minstelonn/",
+          "note": "Gjeldende satser per bransje. Appen leverer ingen satser selv — de må hentes her."
         }
       ],
       "verified": "sekundaerkilde"
@@ -245,6 +401,86 @@
         }
       ],
       "verified": "sekundaerkilde"
+    },
+    {
+      "id": "holiday",
+      "enabled": true,
+      "title": "Ferie — fikk du den?",
+      "explanation": "Du har rett til 25 virkedager ferie hvert ferieår, altså fire uker og én dag, og du kan kreve at 18 av dem gis sammenhengende mellom 1. juni og 30. september. Feriepenger er ikke det samme som ferie: pengene erstatter ikke friden. Denne regelen ser etter en luke i vaktene som er lang nok til å være hovedferie, og sier fra når den ikke finner en — forsiktig, for en luke i vaktplanen er ikke bevis på ferie, og mangel på luke er ikke bevis på at du ikke fikk ferie.",
+      "severity": "til_info",
+      "params": {
+        "main_holiday_days": 21,
+        "min_weeks_observed": 8
+      },
+      "sources": [
+        {
+          "law": "Ferieloven",
+          "paragraph": "§ 5 første ledd",
+          "url": "https://lovdata.no/lov/1988-04-29-21/§5",
+          "note": "Arbeidsgiver plikter å sørge for at arbeidstaker gis feriefritid på 25 virkedager hvert ferieår."
+        },
+        {
+          "law": "Ferieloven",
+          "paragraph": "§ 7 første ledd",
+          "url": "https://lovdata.no/lov/1988-04-29-21/§7",
+          "note": "Arbeidstaker kan kreve at hovedferie som omfatter 18 virkedager gis i hovedferieperioden 1. juni til 30. september."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "contract_contents",
+      "enabled": true,
+      "title": "Hva arbeidsavtalen skal inneholde",
+      "explanation": "Arbeidsavtalen skal opplyse om alt som har vesentlig betydning i arbeidsforholdet, og loven lister opp minstekravene: partenes identitet, arbeidsplass, tittel eller beskrivelse av arbeidet, startdato, arbeidstidens lengde og plassering, lønn og hva den består av, tillegg oppgitt særskilt, utbetalingsmåte og -tidspunkt, ferie og feriepenger, oppsigelsesfrister, prøvetid, tariffavtaler, og ordninger for overtid og vaktendringer. Avtalen skal foreligge senest sju dager etter at arbeidsforholdet begynte, og endringer skal inn i avtalen senest den dagen de trer i kraft. Denne regelen vurderer ikke vilkårene — den viser hvilke punkter vi ikke har, slik at du vet hva du kan be om.",
+      "severity": "til_info",
+      "params": {
+        "min_missing_to_flag": 1
+      },
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-6 første ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-6",
+          "note": "Lister opp hva arbeidsavtalen minst skal inneholde. Utvidet 1. juli 2024."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 14-5 andre og tredje ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§14-5",
+          "note": "Skriftlig arbeidsavtale skal foreligge senest sju dager etter at arbeidsforholdet begynte, og endringer skal tas inn senest den dagen de trer i kraft."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-7",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-7",
+          "note": "Det skal finnes en oversikt som viser hvor mye den enkelte arbeidstaker har arbeidet, tilgjengelig for arbeidstaker og Arbeidstilsynet."
+        },
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-3",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-3",
+          "note": "Arbeidsplanen skal drøftes med tillitsvalgte og være tilgjengelig for arbeidstaker minst to uker før iverksettelse."
+        }
+      ],
+      "verified": "sekundaerkilde"
+    },
+    {
+      "id": "working_time_exemption",
+      "enabled": true,
+      "title": "Unntak fra arbeidstidsreglene",
+      "explanation": "Arbeidstidsreglene i kapittel 10 — arbeidstid, overtid, pauser og arbeidsfri — gjelder ikke for arbeidstaker i ledende eller særlig uavhengig stilling. Unntaket er smalere enn mange tror: en ledende stilling forutsetter klare lederfunksjoner og at du selv bestemmer arbeidstiden, og en særlig uavhengig stilling at du i praksis styrer både arbeidsmengden og når arbeidet gjøres. Tittel, fastlønn eller selvstendig arbeid er ikke nok i seg selv. Har du oppgitt at stillingen er unntatt, slår vi av de sjekkene og sier hvilke.",
+      "severity": "bor_sjekkes",
+      "params": {},
+      "sources": [
+        {
+          "law": "Arbeidsmiljøloven",
+          "paragraph": "§ 10-12 første og andre ledd",
+          "url": "https://lovdata.no/lov/2005-06-17-62/§10-12",
+          "note": "Kapittel 10 gjelder ikke for arbeidstaker i ledende stilling, og med enkelte unntak ikke for arbeidstaker i særlig uavhengig stilling."
+        }
+      ],
+      "verified": "ikke_verifisert"
     }
   ]
 }

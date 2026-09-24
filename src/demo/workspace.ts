@@ -25,6 +25,7 @@
  */
 import {
   NO_AGREED_TERMS,
+  NO_CONTRACT_DETAILS,
   Workspace,
   type Contract,
   type Payslip,
@@ -73,6 +74,11 @@ export function demoContract(): Contract {
     tariffavtale: 'Eksempeltariff (demodata — ikke en virkelig avtale)',
     averagingAgreement: false,
     ...NO_AGREED_TERMS,
+    ...NO_CONTRACT_DETAILS,
+    jobTitle: 'Servitør',
+    workplace: 'Kafé Nordlys, Storgata 1',
+    payDayOfMonth: 15,
+    industry: 'Overnatting, servering og catering',
     // Tariffen i demoen gir 50 % overtidstillegg, ikke lovens minimum på 40 %. Reglene skal
     // bruke kontraktens sats, og vise at den kom derfra.
     overtimeSupplementPercent: 50,

@@ -5,7 +5,15 @@ import { useEffect, useState } from 'react';
 import { describeInvalidTerms, parseAgreedTerms } from '@/domain/agreedTerms';
 import { contractedHoursPerWeek, effectiveHourlyRateOre } from '@/domain/derive';
 import { formatHours, formatKr, parseHoursInput, parseKrInput } from '@/domain/money';
-import { Contract, type Supplement, type SupplementKind, type Workspace } from '@/domain/schemas';
+import {
+  Contract,
+  WORKING_TIME_EXEMPTION_LABELS,
+  type EmploymentType,
+  type Supplement,
+  type SupplementKind,
+  type WorkingTimeExemption,
+  type Workspace,
+} from '@/domain/schemas';
 import { Field, Notice, Spinner } from '../_components/bits';
 import { fetchWorkspace, newId, saveWorkspace } from '../_lib/client';
 
@@ -41,6 +49,20 @@ interface FormState {
   minBreakMinutesLongDay: string;
   paidBreak: boolean;
   largerPositionLookbackMonths: string;
+
+  /* Opplysninger avtalen skal ha (AML § 14-6), og vilkår andre lover henger på */
+  jobTitle: string;
+  workplace: string;
+  employmentType: EmploymentType;
+  temporaryBasis: string;
+  workingTimeExemption: WorkingTimeExemption;
+  noticePeriodMonths: string;
+  probationMonths: string;
+  payDayOfMonth: string;
+  industry: string;
+  allmenngjortMinimum: string;
+  sundayWorkAgreement: boolean;
+  nightWorkAgreement: boolean;
 }
 
 function emptyForm(): FormState {
@@ -67,6 +89,18 @@ function emptyForm(): FormState {
     minBreakMinutesLongDay: '',
     paidBreak: false,
     largerPositionLookbackMonths: '',
+    jobTitle: '',
+    workplace: '',
+    employmentType: 'fast',
+    temporaryBasis: '',
+    workingTimeExemption: 'ingen',
+    noticePeriodMonths: '',
+    probationMonths: '',
+    payDayOfMonth: '',
+    industry: '',
+    allmenngjortMinimum: '',
+    sundayWorkAgreement: false,
+    nightWorkAgreement: false,
   };
 }
 
@@ -100,6 +134,21 @@ function toForm(contract: Contract): FormState {
     minBreakMinutesLongDay: optionalNumber(contract.minBreakMinutesLongDay),
     paidBreak: contract.paidBreak,
     largerPositionLookbackMonths: optionalNumber(contract.largerPositionLookbackMonths),
+    jobTitle: contract.jobTitle ?? '',
+    workplace: contract.workplace ?? '',
+    employmentType: contract.employmentType,
+    temporaryBasis: contract.temporaryBasis ?? '',
+    workingTimeExemption: contract.workingTimeExemption,
+    noticePeriodMonths: optionalNumber(contract.noticePeriodMonths),
+    probationMonths: optionalNumber(contract.probationMonths),
+    payDayOfMonth: optionalNumber(contract.payDayOfMonth),
+    industry: contract.industry ?? '',
+    allmenngjortMinimum:
+      contract.allmenngjortMinimumHourlyOre === null
+        ? ''
+        : (contract.allmenngjortMinimumHourlyOre / 100).toFixed(2).replace('.', ','),
+    sundayWorkAgreement: contract.sundayWorkAgreement,
+    nightWorkAgreement: contract.nightWorkAgreement,
   };
 }
 
@@ -194,6 +243,20 @@ export default function KontraktPage() {
       tariffavtale: form.tariffavtale.trim() === '' ? null : form.tariffavtale.trim(),
       averagingAgreement: form.averagingAgreement,
       ...agreedValues,
+      jobTitle: form.jobTitle.trim() === '' ? null : form.jobTitle.trim(),
+      workplace: form.workplace.trim() === '' ? null : form.workplace.trim(),
+      employmentType: form.employmentType,
+      temporaryBasis: form.temporaryBasis.trim() === '' ? null : form.temporaryBasis.trim(),
+      workingTimeExemption: form.workingTimeExemption,
+      noticePeriodMonths: form.noticePeriodMonths.trim() === '' ? null : parseHoursInput(form.noticePeriodMonths),
+      probationMonths: form.probationMonths.trim() === '' ? null : parseHoursInput(form.probationMonths),
+      payDayOfMonth:
+        form.payDayOfMonth.trim() === '' ? null : Math.round(parseHoursInput(form.payDayOfMonth) ?? 0) || null,
+      industry: form.industry.trim() === '' ? null : form.industry.trim(),
+      allmenngjortMinimumHourlyOre:
+        form.allmenngjortMinimum.trim() === '' ? null : parseKrInput(form.allmenngjortMinimum),
+      sundayWorkAgreement: form.sundayWorkAgreement,
+      nightWorkAgreement: form.nightWorkAgreement,
       maxOvertimeHoursPer4Weeks: workspace.contract?.maxOvertimeHoursPer4Weeks ?? null,
       maxOvertimeHoursPer52Weeks: workspace.contract?.maxOvertimeHoursPer52Weeks ?? null,
       longDayHours: workspace.contract?.longDayHours ?? null,
@@ -335,6 +398,112 @@ export default function KontraktPage() {
           </Notice>
         ) : null}
       </div>
+
+      <h2>Resten av det avtalen skal inneholde</h2>
+      <p className="lead">
+        Loven lister opp hva arbeidsavtalen minst skal opplyse om. Vi bruker disse feltene til å si hva
+        som mangler, og noen av dem avgjør hvilke regler som gjelder for deg.
+      </p>
+
+      <details className="card">
+        <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+          Åpne opplysninger om stilling, ansettelsesform og utbetaling
+        </summary>
+
+        <div className="grid2">
+          <Field label="Stillingstittel eller beskrivelse av arbeidet">
+            <input type="text" value={form.jobTitle} onChange={(e) => set('jobTitle', e.target.value)} placeholder="For eksempel servitør" />
+          </Field>
+          <Field label="Arbeidsplass">
+            <input type="text" value={form.workplace} onChange={(e) => set('workplace', e.target.value)} placeholder="Adresse eller sted" />
+          </Field>
+        </div>
+
+        <div className="grid2">
+          <Field label="Ansettelsesform">
+            <select
+              value={form.employmentType}
+              onChange={(e) => set('employmentType', e.target.value as EmploymentType)}
+            >
+              <option value="fast">Fast ansatt</option>
+              <option value="midlertidig">Midlertidig ansatt</option>
+            </select>
+          </Field>
+          {form.employmentType === 'midlertidig' ? (
+            <Field
+              label="Grunnlaget for midlertidigheten"
+              help="Står det ikke noe grunnlag i avtalen, skal stillingen som hovedregel regnes som fast."
+            >
+              <input
+                type="text"
+                value={form.temporaryBasis}
+                onChange={(e) => set('temporaryBasis', e.target.value)}
+                placeholder="For eksempel vikar for navngitt ansatt"
+              />
+            </Field>
+          ) : null}
+        </div>
+
+        <div className="grid3">
+          <Field label="Oppsigelsesfrist (måneder)">
+            <input type="text" inputMode="decimal" value={form.noticePeriodMonths} onChange={(e) => set('noticePeriodMonths', e.target.value)} placeholder="For eksempel 1" />
+          </Field>
+          <Field label="Prøvetid (måneder)">
+            <input type="text" inputMode="decimal" value={form.probationMonths} onChange={(e) => set('probationMonths', e.target.value)} placeholder="0 hvis ingen" />
+          </Field>
+          <Field label="Lønn utbetales den" help="Dagen i måneden lønna kommer.">
+            <input type="text" inputMode="numeric" value={form.payDayOfMonth} onChange={(e) => set('payDayOfMonth', e.target.value)} placeholder="15" />
+          </Field>
+        </div>
+
+        <div className="grid2">
+          <Field label="Bransje" help="Noen bransjer har lovbestemt minstelønn gjennom allmenngjort tariffavtale.">
+            <input type="text" value={form.industry} onChange={(e) => set('industry', e.target.value)} placeholder="For eksempel servering, renhold, bygg" />
+          </Field>
+          <Field
+            label="Minstelønn i bransjen (kr per time)"
+            help="Finn satsen som gjelder deg på arbeidstilsynet.no. Vi leverer ingen satser selv."
+          >
+            <input type="text" inputMode="decimal" value={form.allmenngjortMinimum} onChange={(e) => set('allmenngjortMinimum', e.target.value)} placeholder="La stå tomt hvis du ikke vet" />
+          </Field>
+        </div>
+
+        <Field
+          label="Er stillingen unntatt arbeidstidsreglene?"
+          help="Ledende eller særlig uavhengig stilling. Unntaket er smalt — tittel eller fastlønn er ikke nok."
+        >
+          <select
+            value={form.workingTimeExemption}
+            onChange={(e) => set('workingTimeExemption', e.target.value as WorkingTimeExemption)}
+          >
+            {(Object.keys(WORKING_TIME_EXEMPTION_LABELS) as WorkingTimeExemption[]).map((value) => (
+              <option key={value} value={value}>
+                {WORKING_TIME_EXEMPTION_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <h3>Avtaler om søndags- og nattarbeid</h3>
+        <div className="inline-choice">
+          <label>
+            <input
+              type="checkbox"
+              checked={form.sundayWorkAgreement}
+              onChange={(e) => set('sundayWorkAgreement', e.target.checked)}
+            />
+            Det finnes en skriftlig avtale om søndagsarbeid
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={form.nightWorkAgreement}
+              onChange={(e) => set('nightWorkAgreement', e.target.checked)}
+            />
+            Det finnes en avtale om nattarbeid
+          </label>
+        </div>
+      </details>
 
       <h2>Avtalte vilkår som avviker fra loven</h2>
       <p className="lead">

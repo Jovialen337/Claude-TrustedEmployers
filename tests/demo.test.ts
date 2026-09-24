@@ -32,25 +32,74 @@ describe('demoen', () => {
   it('finner alle de plantede feilene, og ingenting mer', () => {
     expect([...byId.keys()].sort()).toEqual(
       [
-        'actual_hours_vs_contract:stilling',
-        'breaks:2026-07-15:29735040',
-        'breaks:2026-07-20:29742780',
-        'feriepenger:avsetning:demo-slipp-2026-07',
-        'feriepenger:grunnlag',
-        'hours_vs_stillingsprosent:2026-07',
-        'hours_vs_stillingsprosent:2026-W28',
+        // De plantede feilene
         'overtime:demo-slipp-2026-06',
         'overtime:demo-slipp-2026-07',
-        'overtime:merarbeid',
-        'rest_periods:daglig:demo-vakt-2026-06-19-1500:demo-vakt-2026-06-20-0700',
-        'rest_periods:ukentlig:2026-W29',
         'scheduled_vs_paid:sats:demo-slipp-2026-05:demo-linje-1',
         'scheduled_vs_paid:timer:demo-slipp-2026-07',
         'supplements:demo-slipp-2026-05:helligdagstillegg',
         'supplements:demo-slipp-2026-06:kveldstillegg',
+        'hours_vs_stillingsprosent:2026-W28',
+        'feriepenger:avsetning:demo-slipp-2026-07',
+        'rest_periods:daglig:demo-vakt-2026-06-19-1500:demo-vakt-2026-06-20-0700',
+        'breaks:2026-07-15:29735040',
+        'breaks:2026-07-20:29742780',
+        // Følger av dataene, ikke plantet
+        'actual_hours_vs_contract:stilling',
+        'overtime:merarbeid',
+        'feriepenger:grunnlag',
+        'hours_vs_stillingsprosent:2026-07',
+        'rest_periods:ukentlig:2026-W29',
+        // De nye lovsjekkene
+        'night_work:nattarbeid',
+        'sunday_work:sondagsarbeid',
+        'holiday:hovedferie',
+        'contract_contents:mangler-opplysninger',
+        'contract_contents:arbeidsplan',
+        'minimum_wage:minstelonn-ikke-lagt-inn',
       ].sort(),
     );
-    expect(result.totals.bySeverity).toEqual({ sannsynlig_feil: 6, bor_sjekkes: 6, til_info: 4 });
+    expect(result.totals.bySeverity).toEqual({ sannsynlig_feil: 6, bor_sjekkes: 6, til_info: 10 });
+  });
+
+  it('teller nattarbeid etter kl. 21, uten å rope om det', () => {
+    // Kveldsvaktene slutter 22:00, så hver av dem har én time nattarbeid etter loven.
+    // 48 slike vakter = 48 timer. Hun er ikke nattarbeidstaker, så det er til info.
+    const flag = byId.get('night_work:nattarbeid')!;
+    expect(flag.title).toBe('48,0 t nattarbeid i perioden');
+    expect(flag.severity).toBe('til_info');
+    expect(flag.evidence.find((e) => e.label === 'Regnes som nattarbeidstaker')!.value).toBe('Nei');
+    expect(flag.amountOre).toBeNull();
+  });
+
+  it('skiller helligdager fra søndager i søndagssjekken', () => {
+    // De to dagene er Kristi himmelfartsdag (torsdag) og 2. pinsedag (mandag) — helligdager,
+    // ikke søndager, og ikke to på rad.
+    const flag = byId.get('sunday_work:sondagsarbeid')!;
+    expect(flag.severity).toBe('til_info');
+    expect(flag.evidence.find((e) => e.label === 'Jobbet')!.value).toBe('2');
+  });
+
+  it('sier fra om manglende hovedferie uten å påstå noe', () => {
+    const flag = byId.get('holiday:hovedferie')!;
+    expect(flag.severity).toBe('til_info');
+    expect(flag.message).toContain('ikke bevis');
+    expect(flag.amountOre).toBeNull();
+  });
+
+  it('lister opplysningene arbeidsavtalen mangler', () => {
+    const flag = byId.get('contract_contents:mangler-opplysninger')!;
+    expect(flag.title).toBe('2 av 13 lovpålagte opplysninger mangler hos oss');
+    expect(flag.evidence.map((e) => e.label)).toContain('Oppsigelsesfrister');
+    expect(flag.evidence.map((e) => e.label)).toContain('Eventuell prøvetid');
+  });
+
+  it('peker på minstelønn i bransjen uten å finne opp en sats', () => {
+    const flag = byId.get('minimum_wage:minstelonn-ikke-lagt-inn')!;
+    expect(flag.severity).toBe('til_info');
+    expect(flag.amountOre).toBeNull();
+    expect(flag.evidence.find((e) => e.label === 'Minstelønn lagt inn')!.value).toBe('Nei');
+    expect(flag.message).toContain('arbeidstilsynet.no');
   });
 
   it('krever manglende helligdagstillegg for mai: 10,0 t × 198,50 kr × 100 % = 1 985,00 kr', () => {
