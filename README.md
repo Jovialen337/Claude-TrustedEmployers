@@ -240,6 +240,7 @@ src/app/         Next.js-sider (norsk) og API-ruter
 rules/           regelsettet med terskler, forklaringer og kilder
 tests/           enhetstester, inkludert de vanskelige tilfellene og hele demoen
 scripts/smoke.mjs  ende-til-ende-sjekk mot en app som kjører, uten pakker og uten nettleser
+.claude/skills/run-app/  oppskriften for å starte og styre appen lokalt (for Claude Code)
 ```
 
 Regler under `src/domain/` gjør ingen nettverkskall, leser ingen klokke og bruker ingen

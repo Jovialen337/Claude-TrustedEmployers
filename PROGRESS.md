@@ -94,3 +94,9 @@ from the first unticked box. Do not start over.
   fixed: documents were never registered outside the demo, form labels were not associated with
   their controls, the derived hourly rate was shown without its derivation, and five exported
   helpers plus one dead branch were unused. 230 unit tests and 26 smoke checks pass.
+
+- [x] 21. Project skill for running the app, verified by extracting and executing its own driver
+
+- 2026-09-24 — Added .claude/skills/run-app/SKILL.md. Executing it found one defect in the skill
+  itself (the demo button only exists on an empty workspace), now fixed and re-verified from
+  both states.

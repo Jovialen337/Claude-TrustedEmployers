@@ -391,3 +391,20 @@ gaps came out of it.
   concatenation. `src/domain/sources.ts` now owns it — a comma when the reference is not a §, a
   space when it is — and a test walks every source in the ruleset to check the output reads
   properly. Three copies of a formatting rule is three chances to drift.
+
+## The run skill
+
+- **2026-09-24 — `.claude/skills/run-app/SKILL.md` records how to launch and drive this app.**
+  Three things here are not guessable and had cost time twice: `npm start` rather than
+  `npm run dev` (in a container the dev server's HMR WebSocket cannot complete its upgrade in
+  the browser, so React never hydrates and every page sits on «Laster …», while `curl`
+  performing the same upgrade gets `101`); `pkill -f 'next-serve[r]'` with the brackets,
+  because `pkill -f next-server` matches the shell running it and kills the tool call itself;
+  and Playwright imported from `/opt/node22/lib/node_modules/playwright` rather than as a
+  project dependency, with its browsers already downloaded.
+- **2026-09-24 — The skill was executed, not just written.** Its driver block is extracted from
+  the markdown and run. That immediately caught a defect: the driver clicked
+  «Vis meg et eksempel først», which only exists on an empty workspace, so following the skill
+  top to bottom — where step 4 loads the demo by `curl` — hung for 30 seconds on the second
+  run. The driver now reaches a known state either way, and was verified from both an empty and
+  a loaded workspace. A recipe nobody has run is a guess.
