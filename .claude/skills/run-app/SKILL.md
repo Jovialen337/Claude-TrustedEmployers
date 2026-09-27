@@ -54,6 +54,21 @@ The demo is a fake worker (Kari Nordmann, Kafé Nordlys AS) with three months of
 data and planted errors. It should produce **22 findings** and
 **643638 øre** (6 436,38 kr) owed — assert those, not a vaguer "some findings".
 
+The money lives under `totals`, not at the top level — `flags` is the only array
+there, so a bare `.estimatedOwedOre` reads `undefined` and looks like a bug:
+
+```bash
+curl -sf http://127.0.0.1:3000/api/check | python3 -c \
+  'import json,sys; print(json.load(sys.stdin)["totals"])'
+# estimatedOwedOre 643638 · underScheduledOre 148875 · feriepengerToCheckOre 63000
+# bySeverity {sannsynlig_feil: 6, bor_sjekkes: 6, til_info: 10} · flagCount 22
+```
+
+Only **one** demo shift is `kind: 'planlagt'` (2026-07-20, week 30). So the
+timeline's «Planlagt» column is «—» on 13 of its 14 rows, and that is right, not
+missing data — it is what makes the `contract_contents:arbeidsplan` finding fire.
+Count shifts by `kind`, never by `source`: all 59 have a source, 58 are `jobbet`.
+
 ## Routes worth hitting directly
 
 ```bash
@@ -122,6 +137,13 @@ is right and whose layout is broken.
 - **Fields holding a *group*** of controls (radio buttons, checkboxes — "Lønn",
   "Sats", "Er pausen betalt?") deliberately have no `htmlFor`; reach those by
   `input[aria-label="Sats for tillegget"]`.
+- **The timeline** is a section of `/sjekk`, not its own page or tab, and it is
+  headed «Uke for uke» — there is no "Tidslinje" anywhere, so a locator for that
+  word silently matches nothing and the screenshot is just the top of the page
+  again. Reach it with
+  `page.locator('h2:has-text("Uke for uke")').scrollIntoViewIfNeeded()`, then
+  `table tbody tr` — **14 rows** for the demo: 12 whole weeks plus a partial one
+  at each end, marked «(delvis)» and dimmed.
 - **Collapsed sections:** click the `summary` first, and scope the click to the
   right one — there are 16 rules on the settings page, each with an identically
   named button inside:
