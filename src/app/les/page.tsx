@@ -27,6 +27,7 @@ const KIND_LABELS: Record<Kind, string> = {
 
 export default function LesPage() {
   const [available, setAvailable] = useState<boolean | null>(null);
+  const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
   const [model, setModel] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
 
@@ -46,8 +47,9 @@ export default function LesPage() {
   useEffect(() => {
     fetch('/api/extract')
       .then((response) => response.json())
-      .then((status: { available: boolean; model: string | null }) => {
+      .then((status: { available: boolean; model: string | null; reason?: string | null }) => {
         setAvailable(status.available);
+        setUnavailableReason(status.reason ?? null);
         setModel(status.model);
       })
       .catch(() => setAvailable(false));
@@ -130,9 +132,10 @@ export default function LesPage() {
 
       {!available ? (
         <Notice kind="info" title="Automatisk lesing er ikke satt opp">
+          {/* The reason comes from the server, because which build this is decides it. */}
           <p>
-            Appen fungerer helt uten dette. For å slå det på, kopier <code>.env.example</code> til{' '}
-            <code>.env</code>, lim inn en API-nøkkel fra Anthropic, og start appen på nytt.
+            {unavailableReason ??
+              'Appen fungerer helt uten dette. For å slå det på, legg inn en API-nøkkel fra Anthropic.'}
           </p>
           <p className="small">
             Uten nøkkel legger du inn opplysningene selv: <Link href="/kontrakt">kontrakt</Link>,{' '}

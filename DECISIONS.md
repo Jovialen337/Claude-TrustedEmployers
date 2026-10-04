@@ -408,3 +408,97 @@ gaps came out of it.
   top to bottom — where step 4 loads the demo by `curl` — hung for 30 seconds on the second
   run. The driver now reaches a known state either way, and was verified from both an empty and
   a loaded workspace. A recipe nobody has run is a guess.
+
+## A launchable program: the offline single-file edition
+
+The app needed Node and a terminal, which ruled out the person most likely to need it — someone
+checking their own payslips on a phone. Asked for "a launchable program", and told the target
+was a phone with no Node, the answer is one self-contained HTML file: `dist/Lonnssjekk.html`,
+built by `npm run build:offline`.
+
+**It is the same code, not a second implementation.** This was the central decision. A parallel
+browser version would drift, and the part that must never drift is the sixteen rules — a rule
+that disagrees with itself between two builds is worse than no rule. So the pages, the shell,
+the API route handlers, the rules, the engine, the report, the schedule parser and the masking
+are the project's own files, bundled as they are. Exactly four edges are swapped, by aliases in
+`scripts/build-offline.mjs`:
+
+| Edge | Node build | One file |
+| --- | --- | --- |
+| `@/storage/workspaceStore` | `.data/workspace.json` | `src/offline/browserStore.ts` → `localStorage` |
+| `@/extraction/claude` | the Anthropic SDK | `src/offline/shims/claude.ts` → reading switched off |
+| `next/server` | Next's `NextResponse` | a four-line `Response` wrapper |
+| `next/link`, `next/navigation` | Next's router | `src/offline/navigation.ts` → hash routing |
+
+Two tests in `tests/offline.test.ts` assert that each swapped module still exports everything
+the real one does, so adding a storage function on one side and forgetting the other fails in
+CI rather than only in the built file.
+
+**`window.fetch` is patched rather than the pages rewritten.** Every page talks to the server
+through `fetch('/api/…')`, and the route handlers are plain `Request → Response` functions. So
+`src/offline/api.ts` patches `fetch` and dispatches to those same handlers. Not one page and not
+one line of `_lib/client.ts` needed changing — the alternative was editing eight pages to call
+different helpers, which is eight more places to drift.
+
+**Hash routing, not paths.** The file is opened from disk, so `history.pushState` to `/sjekk` is
+refused on a `file://` origin. `#/sjekk` is the one part of the URL a page can own anywhere;
+back, forward and reload all keep working.
+
+**Reading documents with the AI is left out, deliberately.** It would mean an API key inside a
+file sitting in a phone's Downloads folder — readable by anyone with the phone — and sending the
+document off the device, which is the opposite of what this edition is for. `hasApiKey()` is
+false, and the «Les dokument» page already handles that state. Schedule upload (CSV, text, PDF)
+is fully present, because that parser never needed a key.
+
+That page used to say "copy `.env.example` to `.env` and restart the app", which is nonsense
+advice when you are holding a lone HTML file. The reason now comes from the module that is
+actually missing — `unavailableReason()` in the Claude client, overridden in the shim — through
+the extract route to the page. The build that switched reading off is the one that can explain
+why.
+
+**pdfjs runs on the main thread, via the hook pdfjs provides for it.** It normally fetches its
+worker from a URL and a single file has none. Setting `GlobalWorkerOptions.workerSrc` to a blob
+does work — but only because pdfjs falls back to importing that URL as a module after the worker
+fails to load on a null origin, which is a silent dependency on a failure path in the feature a
+phone user is most likely to need. Instead `globalThis.pdfjsWorker` is set from a statically
+imported worker module, which is what pdfjs documents. It costs ~1.2 MiB of the file and parsing
+blocks the page for about 250 ms on a one-page schedule, measured. Leaving `workerSrc` unset is
+not an option: pdfjs throws `No "GlobalWorkerOptions.workerSrc" specified.` before it will
+consider any fallback.
+
+**`buildReportPdf` returns `Uint8Array` instead of `Buffer`.** pdfkit's browser build emits
+plain byte arrays and there is no `Buffer` in a page. A Node `Buffer` *is* a `Uint8Array`, so
+the server path is unchanged; one test that leant on `Buffer.toString('latin1')` now decodes
+explicitly.
+
+**The built file is committed.** A build artifact in git is normally wrong, but the whole point
+is that someone without Node can download it — and the only way to get a file onto a phone from
+here is GitHub's "Download raw file". README says it is checked in on purpose.
+
+### The bug this found
+
+Feeding it a real PDF — the first time anything in this project had — showed that
+`extractPdfText` joined every text fragment on a page with a space. A schedule with one shift
+per row arrived at the parser as a single line and was rejected whole: *"Forstod ikke datoen
+«Vaktplan august 2026 - Eksempel AS 2026-08-17»"*. **The Node build had exactly the same bug**;
+it had simply never been tried, which the PR body had flagged as the largest untested surface.
+
+A PDF stores no lines, only positioned fragments, so `linesFromItems` now rebuilds rows from the
+items' baselines: fragments within 3pt of each other are one line, ordered by x, and lines run
+down the page by descending y. The tolerance is there because a superscript or rounding moves a
+baseline a point or two, while a new row moves it a line height. `tests/pdfText.test.ts` builds
+real PDFs with pdfkit and reads them back, including one asserting the shift parser finds all
+four rows — a fixture written by hand would only have agreed with whatever the code did.
+
+### What is still weaker here than in the Node build
+
+- **Browser storage can be wiped.** Clearing site data or using private browsing loses
+  everything, with no file on disk as a backup. The README says so and suggests keeping a PDF.
+- **`localStorage` on a `file://` page is not guaranteed.** It works in Chromium, which
+  `npm run smoke:offline` proves on every run, and it is what Android Chrome uses — but a
+  browser that refuses gets a plain-Norwegian explanation rather than a blank page. It has not
+  been tested on a real phone from here; nothing in this container can.
+- **3.2 MiB to download.** pdfkit (1.4 MiB) to write the report and pdfjs plus its worker
+  (2.3 MiB (unminified) ) to read PDFs are most of it. Dropping PDF reading would save ~1.2 MiB
+  and lose the format a shift plan most often comes in; keeping it is the better trade for the
+  person this is for.

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClaudeSend, hasApiKey, modelName } from '@/extraction/claude';
+import { createClaudeSend, hasApiKey, modelName, unavailableReason } from '@/extraction/claude';
 import { ExtractionError, extractStructured, type ExtractionImage } from '@/extraction/extract';
 import { extractPdfText, isImage, isPdf } from '@/extraction/pdfText';
 import { ExtractedContract, ExtractedPayslip, ExtractedSchedule, EXTRACTION_KINDS, type ExtractionKind } from '@/extraction/schemas';
@@ -19,7 +19,11 @@ export const maxDuration = 120;
 
 /** Tells the UI whether document reading is available at all. */
 export async function GET() {
-  return NextResponse.json({ available: hasApiKey(), model: hasApiKey() ? modelName() : null });
+  return NextResponse.json({
+    available: hasApiKey(),
+    model: hasApiKey() ? modelName() : null,
+    reason: hasApiKey() ? null : unavailableReason(),
+  });
 }
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;

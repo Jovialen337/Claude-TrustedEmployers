@@ -26,6 +26,17 @@ export function toWinAnsi(text: string): string {
     .replace(/[^\u0000-ÿ–—«»×§]/g, '?');
 }
 
+function concatBytes(chunks: readonly Uint8Array[]): Uint8Array {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
+}
+
 const SEVERITY_ORDER: Severity[] = ['sannsynlig_feil', 'bor_sjekkes', 'til_info'];
 
 export interface ReportOptions {
@@ -38,7 +49,7 @@ export function buildReportPdf(
   result: CheckResult,
   workspace: Workspace,
   options: ReportOptions = {},
-): Promise<Buffer> {
+): Promise<Uint8Array> {
   const contract: Contract | null = workspace.contract;
   const doc = new PDFDocument({
     size: 'A4',
@@ -50,10 +61,13 @@ export function buildReportPdf(
     },
   });
 
-  const chunks: Buffer[] = [];
-  doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-  const finished = new Promise<Buffer>((resolve) => {
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
+  // Uint8Array rather than Buffer: pdfkit's browser build emits plain byte arrays, and the
+  // offline single-file edition runs this exact function with no Buffer in scope. A Node
+  // Buffer *is* a Uint8Array, so the server path is unchanged.
+  const chunks: Uint8Array[] = [];
+  doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+  const finished = new Promise<Uint8Array>((resolve) => {
+    doc.on('end', () => resolve(concatBytes(chunks)));
   });
 
   const write = (text: string, size = 10, font = 'Helvetica') =>

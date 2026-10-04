@@ -48,20 +48,23 @@ describe('utkast til melding', () => {
   });
 });
 
+/** The PDF is bytes, not a Node Buffer, so latin1 is decoded explicitly. */
+const latin1 = (bytes: Uint8Array) => new TextDecoder('latin1').decode(bytes);
+
 describe('PDF-rapporten', () => {
   it('lages fra demodataene', async () => {
     const pdf = await buildReportPdf(result, workspace, { generatedLabel: '2026-09-21' });
-    expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    expect(latin1(pdf.subarray(0, 5))).toBe('%PDF-');
     expect(pdf.length).toBeGreaterThan(5000);
     // Flere sider: forside/sammendrag, funn, tidslinje, utkast og kilder.
-    const text = pdf.toString('latin1');
+    const text = latin1(pdf);
     expect(text).toContain('/Type /Page');
   });
 
   it('lages også når det ikke er noe å rapportere', async () => {
     const empty = emptyWorkspace('2026-09-21T00:00:00.000Z');
     const pdf = await buildReportPdf(runCheck(empty, { now: '2026-09-21T12:00:00.000Z' }), empty);
-    expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    expect(latin1(pdf.subarray(0, 5))).toBe('%PDF-');
   });
 
   it('bytter ut tegn de innebygde fontene ikke kan vise', () => {

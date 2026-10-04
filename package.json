@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "demo": "tsx scripts/demo-check.ts",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "build:offline": "node scripts/build-offline.mjs",
+    "smoke:offline": "node scripts/smoke-offline.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -30,6 +32,7 @@
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.1"

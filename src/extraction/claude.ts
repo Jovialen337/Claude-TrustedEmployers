@@ -17,6 +17,20 @@ export function modelName(): string {
   return (process.env.ANTHROPIC_MODEL ?? '').trim() || DEFAULT_MODEL;
 }
 
+/**
+ * Why reading is unavailable, in words the user can act on.
+ *
+ * It lives here because this module is the thing that is missing or switched off, and the
+ * offline single-file edition swaps it for one whose answer is different — telling someone
+ * reading a lone HTML file to edit `.env` and restart the app would be nonsense.
+ */
+export function unavailableReason(): string {
+  return (
+    'Appen fungerer helt uten dette. For å slå det på, kopier .env.example til .env, ' +
+    'lim inn en API-nøkkel fra Anthropic, og start appen på nytt.'
+  );
+}
+
 export function createClaudeSend(): Send {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 

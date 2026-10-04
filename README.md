@@ -13,15 +13,54 @@ eller i omsorg. Du trenger ikke kunne noe om arbeidsmiljøloven for å bruke det
 
 ---
 
-## Kjøre appen
+## Åpne den uten å installere noe (også på mobil)
 
-Du trenger [Node.js](https://nodejs.org/) versjon 20 eller nyere. Alt kjører på din egen
-maskin.
+Den enkleste veien inn er **én enkelt fil**: `dist/Lonnssjekk.html`.
+
+Last den ned, trykk på den, og hele programmet kjører i nettleseren din. Du trenger ikke
+Node.js, ikke terminal, ikke installasjon og ikke nett — heller ikke på telefonen.
+
+1. Åpne [`dist/Lonnssjekk.html`](dist/Lonnssjekk.html) her på GitHub og trykk **Download raw
+   file**. (Fila ligger ferdigbygd i repoet med vilje, nettopp slik at du kan hente den uten å
+   bygge noe selv.)
+2. Åpne fila du lastet ned. På Android: Nedlastinger → trykk på fila → velg nettleseren.
+3. Legg den gjerne til på hjemskjermen, så ligger den som et ikon: **⋮ → Legg til på
+   hjemskjerm**.
+
+Dataene dine lagres i nettleserens eget lager på denne enheten, og blir husket neste gang du
+åpner fila. Ingenting sendes noe sted. **Innstillinger → Slett alt** fjerner alt igjen.
+
+To ting er annerledes i denne utgaven enn i den du kjører med Node:
+
+- **Automatisk lesing av dokumenter er ikke med.** Den krever en API-nøkkel og et kall ut av
+  enheten, og en nøkkel inni en fil som ligger i Nedlastinger ville ligget åpen. Du legger inn
+  kontrakt og lønnsslipper selv — resultatet blir like riktig, for det er koden som regner.
+- **Vaktplan kan du likevel laste opp.** CSV, tekstfil og PDF leses på enheten din, uten nøkkel
+  og uten nett, under **2. Vakter**.
+
+Alt det andre er det samme programmet: de samme 16 reglene, de samme regnestykkene, den samme
+PDF-rapporten og det samme utkastet til melding.
+
+> **Tømmer du nettleserdata, eller åpner fila i privat nettlesing, er dataene borte.** Har du
+> lagt inn mye, lag en PDF-rapport underveis — den kan du lagre der du vil.
+
+---
+
+## Kjøre appen med Node
+
+Vil du ha automatisk lesing av dokumenter, eller kjøre den som en vanlig nettside på maskinen,
+trenger du [Node.js](https://nodejs.org/) versjon 20 eller nyere. Alt kjører på din egen maskin.
 
 ```bash
 npm install          # første gang
 npm run build        # bygger appen
 npm start            # starter den på http://localhost:3000
+```
+
+Og for å bygge én-fil-utgaven over på nytt:
+
+```bash
+npm run build:offline   # skriver dist/Lonnssjekk.html
 ```
 
 Åpne <http://localhost:3000> i nettleseren.
@@ -37,6 +76,11 @@ npm run dev          # utviklingsserver med automatisk oppdatering
 npm test             # kjører alle testene
 npm run typecheck    # sjekker typene
 npm run smoke        # kjører hele kjeden mot en app som alt kjører
+```
+
+```bash
+npm run build:offline   # bygger én-fil-utgaven
+npm run smoke:offline   # åpner den i en nettleser og sjekker hele kjeden i den
 ```
 
 `npm run smoke` går gjennom alt en bruker gjør — tomt arbeidsrom, lagre kontrakt, laste opp
@@ -213,6 +257,10 @@ Dokumentene dine er blant de mest sensitive du har: fødselsnummer, kontonummer 
   API-nøkkel og uten nettverk.
 - **«Slett alt»** under Innstillinger sletter kontrakt, vakter, lønnsslipper og dokumenter. Det
   finnes ingen kopi noe annet sted.
+- **I én-fil-utgaven ligger dataene i nettleserens lager på enheten din** (`localStorage`), ikke
+  i en fil på disk. Det er like lokalt, og «Slett alt» tømmer det på samme måte. Den utgaven har
+  ingen API-nøkkel og kan ikke lese dokumenter automatisk, så der går ingenting ut av enheten i
+  det hele tatt.
 
 ---
 
@@ -231,6 +279,7 @@ Dokumentene dine er blant de mest sensitive du har: fødselsnummer, kontonummer 
 src/domain/      ren forretningslogikk uten I/O: skjemaer, øre-aritmetikk, tid, regler, motor
 src/domain/thresholds.ts  hvor hver terskel kommer fra: kontrakten først, loven som gulv
 src/domain/rules/ én fil per regel, hver en ren funksjon fra data til funn
+src/offline/     én-fil-utgaven: de fire kantene som byttes ut (lager, next/*, Claude-klient)
 src/privacy/     maskering av fødselsnummer, kontonummer og kortnummer
 src/extraction/  lesing av dokumenter: PDF-tekst, ledetekster, validering, Claude-kall
 src/storage/     lokal JSON-lagring med atomisk skriving
@@ -240,6 +289,8 @@ src/app/         Next.js-sider (norsk) og API-ruter
 rules/           regelsettet med terskler, forklaringer og kilder
 tests/           enhetstester, inkludert de vanskelige tilfellene og hele demoen
 scripts/smoke.mjs  ende-til-ende-sjekk mot en app som kjører, uten pakker og uten nettleser
+scripts/build-offline.mjs  bygger dist/Lonnssjekk.html — én fil, samme kode, fire byttede kanter
+scripts/smoke-offline.mjs  åpner den bygde fila i en nettleser og kjører hele kjeden i den
 .claude/skills/run-app/  oppskriften for å starte og styre appen lokalt (for Claude Code)
 ```
 

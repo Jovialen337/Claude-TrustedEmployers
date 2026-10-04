@@ -100,3 +100,24 @@ from the first unticked box. Do not start over.
 - 2026-09-24 — Added .claude/skills/run-app/SKILL.md. Executing it found one defect in the skill
   itself (the demo button only exists on an empty workspace), now fixed and re-verified from
   both states.
+
+- [x] 22. Én-fil-utgave: `dist/Lonnssjekk.html` — kjører i nettleseren uten Node, terminal
+      eller installasjon, også på mobil. Samme kode, fire byttede kanter.
+
+- 2026-10-04 — Built the offline single-file edition (`npm run build:offline`, 3.18 MiB). The
+  pages, the shell, the API route handlers, the rules and the report are reused verbatim; only
+  storage, the Claude client and Next's three modules are swapped, and `window.fetch` is patched
+  so no page needed changing. Verified by opening the built file in a browser: 22 findings,
+  643638 øre, 14 timeline rows, a real 12-page PDF built in the page, CSV *and* PDF schedule
+  upload, data surviving a reload, «Slett alt» leaving nothing, no sideways scroll at 390px, and
+  no console errors. `npm run smoke:offline` — 31 checks — automates all of that against the
+  built artifact.
+
+  Driving it found a real bug in shared code: `extractPdfText` joined every PDF text fragment
+  with a space, so a schedule with one shift per row reached the parser as one unparseable line.
+  The Node build had the same bug — the PDF path had never been run on a real PDF. Fixed by
+  rebuilding lines from the items' baselines, with `tests/pdfText.test.ts` round-tripping real
+  PDFs through pdfkit and back. Also corrected the «Les dokument» page, which told every reader
+  to edit `.env` and restart; the reason now comes from whichever Claude client the build used.
+
+  262 unit tests, 26 smoke checks, 31 offline smoke checks, clean `npm run build` and typecheck.
