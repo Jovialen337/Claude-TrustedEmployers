@@ -502,3 +502,28 @@ four rows — a fixture written by hand would only have agreed with whatever the
   (2.3 MiB (unminified) ) to read PDFs are most of it. Dropping PDF reading would save ~1.2 MiB
   and lose the format a shift plan most often comes in; keeping it is the better trade for the
   person this is for.
+
+### Hosting it as a link
+
+Asked for a link as well as a file, the single-file build is published as a private claude.ai
+artifact. Same bytes, served from a URL instead of downloaded.
+
+Two things had to change, both because the artifact viewer's frame is stricter than a `file://`
+page, and both written so the one file still works either way:
+
+- **A hosted page cannot start a download.** `<a download>` and script-driven saves are inert
+  there, which would have left the PDF report button doing nothing at all — the quiet kind of
+  broken. The viewer offers `claude.use('downloads')` instead, which asks before saving. So
+  `handOver()` tries the capability first and falls back to the blob link, and says so plainly
+  if neither is available rather than appearing to work. `npm run smoke:offline` still passes
+  on the file, which proves the fallback; the capability path is wired to the documented
+  contract and could not be driven from here, since this container cannot sign in to claude.ai.
+- **`alert()` is never shown to a hosted viewer.** A failed report said nothing. Messages now
+  go on the page, in a `role="status"` line next to the button.
+
+The `<title>` became just `Lønnssjekk`, dropping the tagline. It is what a phone shows in its
+tab strip and what the hosted copy is listed under, and a name reads better there than a
+sentence; the tagline is still the page's description.
+
+**The link and the file keep separate data.** Different origins, so neither can see the other's
+`localStorage`. Worth saying out loud to anyone who tries both.

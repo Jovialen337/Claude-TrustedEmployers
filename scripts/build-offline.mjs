@@ -96,7 +96,7 @@ function shell({ css, js }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lønnssjekk — får du det kontrakten din sier?</title>
+<title>Lønnssjekk</title>
 <meta name="description" content="Lokalt verktøy som sammenligner arbeidskontrakt, vaktplan og lønnsslipper, og viser hvor de ikke stemmer. Alt skjer i nettleseren din.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(

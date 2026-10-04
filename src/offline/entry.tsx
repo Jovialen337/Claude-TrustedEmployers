@@ -45,9 +45,10 @@ function App() {
   const path = useSyncExternalStore(subscribe, currentPath, () => currentPath());
   const Page = PAGES[path];
 
-  // The pages are written for a server that sets the document title; here it is set once.
+  // The pages are written for a server that sets the document title. Kept short here: it is
+  // what a phone shows in its tab strip and what a hosted copy is listed under.
   useEffect(() => {
-    document.title = 'Lønnssjekk — får du det kontrakten din sier?';
+    document.title = 'Lønnssjekk';
   }, []);
 
   // Scrolling to the top on each step makes the long pages usable on a phone.
@@ -59,9 +60,62 @@ function App() {
 }
 
 /**
+ * Two ways to hand over the finished PDF, because this one file is opened two ways.
+ *
+ * Opened from disk, the browser takes a blob from a link with a `download` attribute. Opened
+ * from a claude.ai link, the viewer's frame refuses that — a page there cannot start a download
+ * — and offers `claude.use('downloads')` instead, which asks the viewer before saving. So the
+ * capability is tried first and the blob link is the fallback. Neither is assumed: if the page
+ * has no way to hand over a file it says so rather than appearing to do nothing.
+ */
+interface DownloadsCapability {
+  save(request: { filename: string; data: Blob }): Promise<{ status: string }>;
+}
+
+interface ClaudeHost {
+  use?(name: string): Promise<DownloadsCapability | null>;
+}
+
+const SAVE_FAILURES: Record<string, string> = {
+  declined: '',
+  rate_limited: 'Prøv én gang til — det ligger allerede en forespørsel og venter.',
+  too_large: 'Rapporten ble for stor å laste ned her.',
+  unavailable: 'Denne visningen kan ikke laste ned filer. Åpne Lønnssjekk som nedlastet fil i stedet.',
+  not_granted: 'Nedlasting er ikke tillatt i denne visningen.',
+};
+
+async function handOver(blob: Blob, filename: string): Promise<string> {
+  const host = (globalThis as { claude?: ClaudeHost }).claude;
+  if (typeof host?.use === 'function') {
+    const downloads = await host.use('downloads').catch(() => null);
+    if (downloads !== null && downloads !== undefined) {
+      try {
+        await downloads.save({ filename, data: blob });
+        return '';
+      } catch (error) {
+        const code = (error as { code?: string }).code ?? 'unavailable';
+        return SAVE_FAILURES[code] ?? `Rapporten ble ikke lagret (${code}).`;
+      }
+    }
+  }
+
+  // Opened as a file: the browser's own download.
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Revoked late: a phone browser may still be opening the blob when the click returns.
+  globalThis.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return '';
+}
+
+/**
  * The report page offers the PDF as a plain `<a href="/api/report">`, which a server would
- * answer. Here the click is caught, the PDF is built in the page, and the browser is handed a
- * blob to save — so the page itself stays exactly as the Next build has it.
+ * answer. Here the click is caught and the PDF is built in the page, so the page itself stays
+ * exactly as the Next build has it.
  */
 function installReportDownload(): void {
   document.addEventListener('click', (event) => {
@@ -73,6 +127,18 @@ function installReportDownload(): void {
     event.preventDefault();
     const busy = anchor.textContent;
     anchor.textContent = 'Lager PDF …';
+
+    // `alert` is never shown to a viewer on claude.ai, so anything worth saying goes on the page.
+    let status = anchor.parentElement?.querySelector<HTMLElement>('[data-report-status]') ?? null;
+    if (status === null) {
+      status = document.createElement('p');
+      status.dataset.reportStatus = 'true';
+      status.className = 'small';
+      status.setAttribute('role', 'status');
+      anchor.parentElement?.appendChild(status);
+    }
+    status.textContent = '';
+
     void (async () => {
       try {
         const response = await handleApiRequest('/api/report', { method: 'GET' });
@@ -80,18 +146,10 @@ function installReportDownload(): void {
           const body = (await response.json().catch(() => null)) as { error?: string } | null;
           throw new Error(body?.error ?? `Rapporten kunne ikke lages (${response.status}).`);
         }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `lonnssjekk-rapport-${new Date().toISOString().slice(0, 10)}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        // Revoked late: a phone browser may still be opening the blob when the click returns.
-        globalThis.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        const filename = `lonnssjekk-rapport-${new Date().toISOString().slice(0, 10)}.pdf`;
+        status.textContent = await handOver(await response.blob(), filename);
       } catch (error) {
-        globalThis.alert((error as Error).message);
+        status.textContent = (error as Error).message;
       } finally {
         if (busy !== null) anchor.textContent = busy;
       }
