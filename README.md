@@ -32,10 +32,14 @@ Dataene dine lagres i nettleserens eget lager på denne enheten, og blir husket 
 
 To ting er annerledes i denne utgaven enn i den du kjører med Node:
 
-- **Automatisk lesing av dokumenter er ikke med.** Den krever en API-nøkkel og et kall ut av
-  enheten, og en nøkkel inni en fil som ligger i Nedlastinger ville ligget åpen. Du legger inn
-  kontrakt og lønnsslipper selv — resultatet blir like riktig, for det er koden som regner.
-- **Vaktplan kan du likevel laste opp.** CSV, tekstfil og PDF leses på enheten din, uten nøkkel
+- **Automatisk lesing av dokumenter virker bare fra en claude.ai-lenke.** Da spør siden Claude
+  på *din egen* konto, så det trengs ingen API-nøkkel noe sted — og du blir spurt før første
+  gang. Fødselsnummer og kontonummer maskeres før teksten sendes, du ser hva som ble fjernet,
+  og du bekrefter feltene før noe lagres. Som nedlastet fil er lesingen av. En nøkkel inni en
+  fil som ligger i Nedlastinger ville ligget åpen for alle som har fila, og derfor er den ikke
+  der. Du legger da inn kontrakt og lønnsslipper selv — resultatet blir like riktig, for det er
+  koden som regner.
+- **Vaktplan kan du laste opp uansett.** CSV, tekstfil og PDF leses på enheten din, uten nøkkel
   og uten nett, under **2. Vakter**.
 
 Alt det andre er det samme programmet: de samme 16 reglene, de samme regnestykkene, den samme

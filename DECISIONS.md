@@ -527,3 +527,34 @@ sentence; the tagline is still the page's description.
 
 **The link and the file keep separate data.** Different origins, so neither can see the other's
 `localStorage`. Worth saying out loud to anyone who tries both.
+
+### Reading a contract in the hosted copy, without a key anywhere
+
+A comment on the artifact asked for contract upload where "Ai can analyze and user can confirm".
+That flow already existed — `/les` reads a document, shows every field it found, and saves
+nothing until the user confirms — but the single-file edition had it switched off, because a key
+inside a file in someone's Downloads folder is a key in plain sight.
+
+The artifact runtime answers this properly: the `sample` capability lets the page ask Claude on
+the **viewer's own account**. No key is shipped, the viewer is asked before the first call and
+pays for it themselves. So `src/offline/shims/claude.ts` now implements the same injected
+`Send` the Anthropic client does, backed by `claude.use('sample')`. Everything around the
+transport is untouched — the prompt, the schema, the single re-ask on invalid JSON, the mapping
+into øre, and the masking, which happens inside `extractStructured` before any transport sees
+the text. Driving the built file with a stood-in viewer confirms the fødselsnummer and
+kontonummer never reach the call while the employer and the rate do, and that 198,50 kr arrives
+in the workspace as `amountOre: 19850`, converted by code.
+
+Two details worth recording:
+
+- **`hasApiKey()` is synchronous; `claude.use()` is not** (and takes up to ten seconds to say
+  "never" when no viewer answers). Rather than make the shared signature async and touch the
+  real client and two routes, `src/offline/api.ts` awaits a memoized `ensureReady()` before
+  dispatching, so availability is settled before any handler runs and costs nothing after the
+  first request.
+- **`cache: false` on every call.** Answers are replayed for five minutes by default, which
+  would make the re-ask after a failed validation return the same invalid JSON.
+
+Opened as a downloaded file there is no viewer, `use()` is absent, reading stays off, and the
+page says which of the two it is. Images go through only where `sample.limits()` reports them,
+and the existing consent gate for unmaskable images is unchanged.

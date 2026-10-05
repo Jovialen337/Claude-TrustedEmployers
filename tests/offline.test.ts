@@ -6,7 +6,7 @@
  * the shapes the rest of the app expects. A storage function added on one side and forgotten on
  * the other would break only in the built file, which no unit test would otherwise reach.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as browserStore from '@/offline/browserStore';
 import * as fileStore from '@/storage/workspaceStore';
 import * as offlineClaude from '@/offline/shims/claude';
@@ -135,16 +135,11 @@ describe('the swapped edges keep the shape the app expects', () => {
     expect(Object.keys(offlineClaude)).toEqual(expect.arrayContaining(required));
   });
 
-  it('the Claude shim reports reading as unavailable, with a reason that fits this build', () => {
-    expect(offlineClaude.hasApiKey()).toBe(false);
+  it('the Claude shim explains itself in words that fit this build', () => {
     expect(offlineClaude.unavailableReason()).toMatch(/én enkelt fil/);
     // The .env advice would be nonsense in a lone HTML file.
     expect(offlineClaude.unavailableReason()).not.toMatch(/\.env/);
     expect(realClaude.unavailableReason()).toMatch(/\.env/);
-  });
-
-  it('the Claude shim refuses to send, rather than pretending to', () => {
-    expect(() => offlineClaude.createClaudeSend()).toThrow(/offline-utgaven/);
   });
 
   it('NextResponse.json matches what the route handlers rely on', async () => {
@@ -183,5 +178,162 @@ describe('hash routing', () => {
     for (const path of ['/', '/kontrakt', '/vakter', '/lonnsslipper', '/les', '/sjekk', '/rapport', '/innstillinger']) {
       expect(pathFromHash(hrefFor(path))).toBe(path);
     }
+  });
+});
+
+/**
+ * Reading a document in the hosted copy.
+ *
+ * There is no API key in a single file, so the page asks Claude on the viewer's own account
+ * through the `sample` capability. What is worth testing is that it is wired as an ordinary
+ * `Send` — the prompt, the schema and the masking around it are the project's own and already
+ * covered — and that every way the call can fail reaches the user as Norwegian they can act on.
+ */
+describe('reading documents through the viewer’s own Claude', () => {
+  interface FakeCall {
+    input: string;
+    options?: { images?: Blob[]; cache?: boolean; modelTier?: string };
+  }
+
+  /** Install a `claude.use('sample')` host and load the shim fresh against it. */
+  async function withSample(
+    sample: ((input: string, options?: FakeCall['options']) => Promise<{ text: string; truncated: boolean }>) | null,
+    limits: { maxPromptBytes?: number; images?: { maxCount: number } } | null = { maxPromptBytes: 262_144 },
+  ) {
+    const calls: FakeCall[] = [];
+    const wrapped =
+      sample === null
+        ? null
+        : Object.assign(
+            async (input: string, options?: FakeCall['options']) => {
+              calls.push({ input, options });
+              return sample(input, options);
+            },
+            { limits: async () => (limits === null ? Promise.reject(new Error('no limits')) : limits) },
+          );
+
+    Object.defineProperty(globalThis, 'claude', {
+      value: { use: async (name: string) => (name === 'sample' ? wrapped : null) },
+      configurable: true,
+    });
+    vi.resetModules();
+    const shim = await import('@/offline/shims/claude');
+    await shim.ensureReady();
+    return { shim, calls };
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis as object, 'claude');
+    vi.resetModules();
+  });
+
+  it('is unavailable when the page is opened as a plain file', async () => {
+    vi.resetModules();
+    const shim = await import('@/offline/shims/claude');
+    await shim.ensureReady();
+    expect(shim.hasApiKey()).toBe(false);
+    expect(() => shim.createClaudeSend()).toThrow(/én enkelt fil/);
+  });
+
+  it('is unavailable when the viewer has not allowed it', async () => {
+    const { shim } = await withSample(null);
+    expect(shim.hasApiKey()).toBe(false);
+  });
+
+  it('becomes available when the viewer can ask Claude', async () => {
+    const { shim } = await withSample(async () => ({ text: '{"ok":true}', truncated: false }));
+    expect(shim.hasApiKey()).toBe(true);
+  });
+
+  it('sends the prompt and the schema, and gives back what Claude wrote', async () => {
+    const { shim, calls } = await withSample(async () => ({ text: '{"employer":"Kafé Nordlys AS"}', truncated: false }));
+    const send = shim.createClaudeSend();
+
+    const answer = await send({ prompt: 'Les denne kontrakten', schemaHint: '{"employer": string}' });
+
+    expect(answer).toBe('{"employer":"Kafé Nordlys AS"}');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.input).toContain('Les denne kontrakten');
+    expect(calls[0]!.input).toContain('{"employer": string}');
+    // The framing the real client sends as a system prompt leads the prompt here instead.
+    expect(calls[0]!.input).toMatch(/svarer bare med JSON/);
+    // A re-ask after failed validation must really ask again, not replay a cached answer.
+    expect(calls[0]!.options?.cache).toBe(false);
+  });
+
+  it('passes the validation error back on a re-ask', async () => {
+    const { shim, calls } = await withSample(async () => ({ text: '{}', truncated: false }));
+    await shim.createClaudeSend()({
+      prompt: 'p',
+      schemaHint: 's',
+      previousError: 'stillingsprosent: Required',
+    });
+    expect(calls[0]!.input).toContain('stillingsprosent: Required');
+  });
+
+  it('turns an image into a blob for the call', async () => {
+    const { shim, calls } = await withSample(
+      async () => ({ text: '{}', truncated: false }),
+      { maxPromptBytes: 262_144, images: { maxCount: 4 } },
+    );
+    expect(shim.canSendImages()).toBe(true);
+
+    await shim.createClaudeSend()({
+      prompt: 'p',
+      schemaHint: 's',
+      // "hei" in base64.
+      image: { mediaType: 'image/png', base64: 'aGVp' },
+    });
+
+    const images = calls[0]!.options?.images;
+    expect(images).toHaveLength(1);
+    expect(images![0]!.type).toBe('image/png');
+    expect(await images![0]!.text()).toBe('hei');
+  });
+
+  it('knows when this view cannot send images at all', async () => {
+    const { shim } = await withSample(async () => ({ text: '{}', truncated: false }), {
+      maxPromptBytes: 262_144,
+    });
+    expect(shim.canSendImages()).toBe(false);
+  });
+
+  it('refuses a document too long to read, instead of sending and failing', async () => {
+    const { shim, calls } = await withSample(async () => ({ text: '{}', truncated: false }), {
+      maxPromptBytes: 200,
+    });
+    await expect(
+      shim.createClaudeSend()({ prompt: 'x'.repeat(5000), schemaHint: 's' }),
+    ).rejects.toThrow(/for langt/);
+    expect(calls).toHaveLength(0);
+  });
+
+  it.each([
+    ['not_granted', /ikke gitt denne siden lov/],
+    ['rate_limited', /for mange forespørsler/],
+    ['session_expired', /logge inn/],
+    ['refused', /ville ikke lese/],
+    ['prompt_too_large', /for langt/],
+    ['image_rejected', /Bildet kunne ikke leses/],
+  ])('explains a %s failure in Norwegian', async (code, expected) => {
+    const { shim } = await withSample(async () => {
+      throw { code, message: 'english developer text' };
+    });
+    await expect(shim.createClaudeSend()({ prompt: 'p', schemaHint: 's' })).rejects.toThrow(expected);
+  });
+
+  it('has something to say about a failure code it has never seen', async () => {
+    const { shim } = await withSample(async () => {
+      throw { code: 'something_new', message: 'x' };
+    });
+    await expect(shim.createClaudeSend()({ prompt: 'p', schemaHint: 's' })).rejects.toThrow(
+      /Prøv igjen, eller legg inn opplysningene selv/,
+    );
+  });
+
+  it('survives a view whose limits cannot be read', async () => {
+    const { shim } = await withSample(async () => ({ text: '{}', truncated: false }), null);
+    expect(shim.hasApiKey()).toBe(true);
+    expect(shim.canSendImages()).toBe(false);
   });
 });

@@ -248,6 +248,112 @@ try {
   await page.waitForTimeout(700);
   check('it leaves nothing behind', (await page.evaluate(() => localStorage.getItem('lonnssjekk:workspace'))) === null);
 
+  console.log('\nreading a contract the way a claude.ai viewer can');
+  {
+    // The hosted copy asks Claude on the viewer's own account through the `sample` capability.
+    // There is no viewer here, so one is stood in for: what this proves is the wiring and —
+    // the part that matters — that the text is masked before it reaches the transport.
+    const hosted = await browser.newPage({ viewport: { width: 1120, height: 1100 } });
+    const hostedProblems = [];
+    hosted.on('pageerror', (error) => hostedProblems.push(`pageerror: ${error.message}`));
+    hosted.on('console', (message) => {
+      if (message.type() === 'error') hostedProblems.push(message.text());
+    });
+
+    await hosted.addInitScript(() => {
+      const answer = JSON.stringify({
+        employer: 'Kafé Nordlys AS',
+        employeeName: 'Ola Eksempel',
+        startDate: '2026-01-15',
+        stillingsprosent: 60,
+        fullTimeHoursPerWeek: 37.5,
+        contractedHoursPerWeek: null,
+        wageKind: 'hourly',
+        wageKroner: 198.5,
+        tariffavtale: null,
+        overtimeSupplementPercent: 50,
+        supplements: [
+          {
+            label: 'Kveldstillegg',
+            kind: 'kveld',
+            fromTime: '18:00',
+            toTime: '23:59',
+            rateKroner: null,
+            ratePercent: 20,
+            source: 'punkt 5',
+          },
+        ],
+        notes: ['Timelønn lest fra punkt 4'],
+      });
+      window.__sampleCalls = [];
+      const sample = async (input, options) => {
+        window.__sampleCalls.push({ input, options });
+        return { text: answer, truncated: false };
+      };
+      sample.limits = async () => ({ maxPromptBytes: 262144 });
+      window.claude = { use: async (name) => (name === 'sample' ? sample : null) };
+    });
+
+    await hosted.goto(`${url}#/les`, { waitUntil: 'load' });
+    await hosted.evaluate(() => localStorage.clear());
+    await hosted.reload({ waitUntil: 'load' });
+    await hosted.waitForSelector('input[type=file]', { timeout: 30_000 });
+
+    const offered = !(await hosted.locator('main').innerText()).includes('Automatisk lesing er ikke satt opp');
+    check('reading is offered when the viewer can ask Claude', offered);
+
+    const contract = [
+      'ARBEIDSAVTALE',
+      'Arbeidsgiver: Kafé Nordlys AS',
+      'Arbeidstaker: Ola Eksempel',
+      'Fødselsnummer: 01019012345',
+      'Kontonummer: 1234 56 78903',
+      'Stillingsprosent: 60 %',
+      'Timelønn: 198,50 kr',
+    ].join('\n');
+    await hosted.setInputFiles('input[type=file]', {
+      name: 'arbeidsavtale.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from(contract, 'utf8'),
+    });
+    await hosted.click('button:has-text("Les dokumentet")');
+    await hosted.waitForSelector('h3:has-text("Stemmer dette?"), h2:has-text("Stemmer dette?")', {
+      timeout: 60_000,
+    });
+    check('the fields come back for the user to confirm', true);
+
+    const calls = await hosted.evaluate(() => window.__sampleCalls ?? []);
+    check('exactly one call was made', calls.length === 1, `calls=${calls.length}`);
+    const sent = calls[0]?.input ?? '';
+    check('the fødselsnummer never left the device', !sent.includes('01019012345'));
+    check('the kontonummer never left the device', !sent.includes('1234 56 78903'));
+    check('the employer and the rate did survive masking',
+      sent.includes('Kafé Nordlys AS') && sent.includes('198,50'));
+    check('a re-ask cannot be served from cache', calls[0]?.options?.cache === false);
+
+    const summary = await hosted.locator('main').innerText();
+    check('the user is told what was removed before sending',
+      /Fjernet før sending/.test(summary), summary.slice(0, 120));
+
+    await hosted.click('button:has-text("Dette stemmer")');
+    await hosted.waitForTimeout(800);
+    const stored = await hosted.evaluate(() =>
+      JSON.parse(localStorage.getItem('lonnssjekk:workspace') ?? '{}'),
+    );
+    check('nothing is saved until the user confirms, and then it is',
+      stored.contract?.employer === 'Kafé Nordlys AS', JSON.stringify(stored.contract?.employer));
+    check('the kroner became integer øre, converted by code',
+      stored.contract?.wage?.amountOre === 19850, JSON.stringify(stored.contract?.wage));
+    check('the contract’s own supplement rate was kept',
+      stored.contract?.supplements?.[0]?.rate?.value === 20);
+    check('the stored preview of the document is masked too',
+      !(stored.documents?.[0]?.maskedTextPreview ?? '').includes('01019012345'));
+    check('nothing was logged as an error while reading', hostedProblems.length === 0,
+      hostedProblems.join(' | '));
+
+    await hosted.close();
+  }
+
   check('nothing was logged as an error along the way', problems.length === 0, problems.join(' | '));
 } finally {
   await browser.close();

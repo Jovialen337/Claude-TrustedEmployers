@@ -18,6 +18,7 @@ import { POST as importSchedulePost } from '../app/api/import-schedule/route';
 import { GET as reportGet } from '../app/api/report/route';
 import { DELETE as workspaceDelete, GET as workspaceGet, PUT as workspacePut } from '../app/api/workspace/route';
 import { StorageError } from './browserStore';
+import { ensureReady } from './shims/claude';
 
 type Handler = (request: Request) => Promise<Response> | Response;
 
@@ -50,6 +51,10 @@ export async function handleApiRequest(input: RequestInfo | URL, init?: RequestI
   if (route === undefined) {
     return NOT_FOUND(path ?? String(input));
   }
+
+  // `hasApiKey()` answers synchronously inside the handlers, so whether this view can ask
+  // Claude has to be settled before one runs. Memoized, so only the first call waits.
+  await ensureReady();
 
   const method = (
     init?.method ?? (typeof input === 'object' && 'method' in input ? (input as Request).method : 'GET')

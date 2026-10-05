@@ -121,3 +121,13 @@ from the first unticked box. Do not start over.
   to edit `.env` and restart; the reason now comes from whichever Claude client the build used.
 
   262 unit tests, 26 smoke checks, 31 offline smoke checks, clean `npm run build` and typecheck.
+
+- [x] 23. Lesing av dokumenter i lenke-utgaven, uten API-nøkkel noe sted — via `sample`
+
+- 2026-10-05 — A comment on the artifact asked for contract upload with AI reading and a confirm
+  step. The flow existed but was off in the single file for want of a key; the hosted copy now
+  asks Claude on the viewer's own account through the `sample` capability, wired as the same
+  injected `Send`. Masking, schema validation, the re-ask and the confirm screen are unchanged.
+  `npm run smoke:offline` is now 44 checks, including that the fødselsnummer and kontonummer
+  never reach the call while the employer and rate do, and that the kroner land as integer øre.
+  277 unit tests.
