@@ -24,7 +24,7 @@
           "note": "Arbeidsavtalen skal opplyse om lengde og plassering av den daglige og ukentlige arbeidstiden. Selve stillingsprosenten og timetallet følger av din egen kontrakt."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "overtime",
@@ -75,7 +75,7 @@
           "note": "Arbeidsgiver og arbeidstaker kan avtale at overtidstimene tas ut som fri, men tillegget skal betales i penger."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "rest_periods",
@@ -109,7 +109,7 @@
           "note": "Avtalt arbeidsfri brukes når den står i kontrakten, men aldri kortere enn 8 timer i døgnet eller 28 timer i uka."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "breaks",
@@ -143,7 +143,7 @@
           "note": "Kontrakten kan kreve pause tidligere, lengre pause, eller at pausen er betalt. Da gjelder kontrakten."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "sunday_work",
@@ -169,7 +169,7 @@
           "note": "Arbeidstaker skal ha arbeidsfri annenhver søn- og helgedag. Skriftlig avtale kan gi en annen ordning innenfor 26 uker."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "night_work",
@@ -206,7 +206,7 @@
           "note": "For arbeidstaker som jevnlig arbeider mer enn tre timer om natten skal alminnelig arbeidstid i gjennomsnitt ikke overstige åtte timer per 24 timer, beregnet over fire uker."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "actual_hours_vs_contract",
@@ -233,7 +233,7 @@
           "note": "Tvist om retten til større stilling kan bringes inn for Tvisteløsningsnemnda."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "temporary_employment",
@@ -264,7 +264,7 @@
           "note": "Arbeidsavtalen skal oppgi forventet varighet og grunnlaget for midlertidig ansettelse."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "scheduled_vs_paid",
@@ -280,7 +280,7 @@
       "sources": [
         {
           "law": "Arbeidsmiljøloven",
-          "paragraph": "§ 14-15 femte ledd",
+          "paragraph": "§ 14-15 sjette ledd",
           "url": "https://lovdata.no/lov/2005-06-17-62/§14-15",
           "note": "Arbeidstaker har krav på skriftlig oppgave over beregningsmåten for lønn, beregningsgrunnlaget for feriepenger og eventuelle trekk."
         },
@@ -291,7 +291,7 @@
           "note": "Satsen som sammenlignes hentes fra din egen kontrakt, ikke fra loven."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "wage_deductions",
@@ -305,24 +305,24 @@
       "sources": [
         {
           "law": "Arbeidsmiljøloven",
-          "paragraph": "§ 14-15 andre ledd",
+          "paragraph": "§ 14-15 tredje ledd",
           "url": "https://lovdata.no/lov/2005-06-17-62/§14-15",
           "note": "Trekk i lønn og feriepenger kan ikke gjøres unntatt i de tilfellene som er listet opp i bokstav a til f."
         },
         {
           "law": "Arbeidsmiljøloven",
-          "paragraph": "§ 14-15 tredje ledd",
+          "paragraph": "§ 14-15 fjerde ledd",
           "url": "https://lovdata.no/lov/2005-06-17-62/§14-15",
-          "note": "Trekk etter andre ledd bokstav c til f skal begrenses til den delen av kravet som overstiger det arbeidstakeren med rimelighet trenger til underhold."
+          "note": "Trekk etter tredje ledd bokstav c, e og f skal begrenses til den delen av kravet som overstiger det arbeidstakeren med rimelighet trenger til underhold."
         },
         {
           "law": "Høyesterett",
           "paragraph": "HR-2021-2532-A",
           "url": "https://www.domstol.no/no/hoyesterett/avgjorelser/2021/hoyesterett-sivil/hr-2021-2532-a/",
-          "note": "Avtalen lønnstrekket bygger på må konkretisere det aktuelle trekket. Standardformuleringer er ikke nok."
+          "note": "Avtalen lønnstrekket bygger på må konkretisere det aktuelle trekket. Standardformuleringer er ikke nok. Dommen viser til «§ 14-15 andre ledd», som var riktig ledd i 2021 — forbudet står nå i tredje ledd."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "minimum_wage",
@@ -347,7 +347,7 @@
           "note": "Gjeldende satser per bransje. Appen leverer ingen satser selv — de må hentes her."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "supplements",
@@ -372,7 +372,7 @@
           "note": "Definerer nattarbeid (arbeid mellom kl. 21.00 og kl. 06.00), men regulerer ikke betaling for det."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "feriepenger",
@@ -400,7 +400,7 @@
           "note": "Feriepengegrunnlaget er arbeidsvederlag utbetalt i opptjeningsåret. Feriepenger fra året før, og noen andre ytelser, inngår ikke."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "holiday",
@@ -426,7 +426,7 @@
           "note": "Arbeidstaker kan kreve at hovedferie som omfatter 18 virkedager gis i hovedferieperioden 1. juni til 30. september."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "contract_contents",
@@ -463,7 +463,7 @@
           "note": "Arbeidsplanen skal drøftes med tillitsvalgte og være tilgjengelig for arbeidstaker minst to uker før iverksettelse."
         }
       ],
-      "verified": "sekundaerkilde"
+      "verified": "lovtekst"
     },
     {
       "id": "working_time_exemption",
@@ -480,7 +480,7 @@
           "note": "Kapittel 10 gjelder ikke for arbeidstaker i ledende stilling, og med enkelte unntak ikke for arbeidstaker i særlig uavhengig stilling."
         }
       ],
-      "verified": "ikke_verifisert"
+      "verified": "lovtekst"
     }
   ]
 }

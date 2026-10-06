@@ -591,3 +591,94 @@ including six with shuffled order. The concurrency run also fails about nineteen
 stub globals or share a temp directory, which is a property of those tests rather than of the
 code; `tests/offline.test.ts` now says in its header that it must run sequentially, so nobody
 turns concurrency on and reads the result as a regression.
+
+## Verifying the rules against the statute itself
+
+The standing caveat on this project was that the sixteen rules had been checked against
+summaries — LO, Arbeidstilsynet, law firms — rather than the statute, because lovdata.no was
+unreachable from here. That is now closed, and closing it found four things wrong.
+
+### Getting at the text
+
+lovdata.no answers `405 Request stopped by Varnish IPS` to requests from this container. The
+CONNECT tunnel succeeds and TLS completes, so it is not the egress proxy: it is Lovdata's own
+intrusion prevention refusing a datacenter IP, which is their anti-scraping defence and is
+theirs to make. It was not worked around — no IP rotation, no proxy hopping.
+
+Two routes served instead, and Norwegian statute text carries no copyright
+(åndsverkloven § 14), so it can be kept in the repo:
+
+- **Arbeidstilsynet publishes the whole of arbeidsmiljøloven**, verbatim, all twenty chapters —
+  the agency that enforces the act, reachable from here, 216 000 characters. That is the source
+  for every AML provision, and for allmenngjøringsloven.
+- **`WebFetch` reaches lovdata.no**, because it fetches Claude-side rather than from this
+  container's IP. Ferieloven §§ 5, 6, 7 and 10 came from there, word for word.
+- **domstol.no** for HR-2021-2532-A.
+
+All of it is in `docs/lovtekst/`, with a manifest naming the source and the date, so a
+paragraph reference in a finding can be traced to the words it rests on. `npm run
+hent-lovtekst` re-fetches what can be fetched and checks 23 operative formulations — every
+number and threshold the rules depend on — reporting any that have disappeared. It reports the
+ferieloven part as needing a human, rather than pretending it can fetch it.
+
+### What the check found
+
+**Three paragraph references were off by one**, all in § 14-15, because that section has gained
+a paragraph about payment via bank since the summaries were written:
+
+| Cited | Correct | Subject |
+| --- | --- | --- |
+| § 14-15 andre ledd | § 14-15 **tredje** ledd | The ban on deductions from pay |
+| § 14-15 tredje ledd | § 14-15 **fjerde** ledd | The limit on a deduction's size |
+| § 14-15 femte ledd | § 14-15 **sjette** ledd | The right to a written pay statement |
+
+A note on that fourth-paragraph source also said "bokstav c til f" where the statute says
+"bokstav c, e og f" — it does not include d. And HR-2021-2532-A cites "§ 14-15 andre ledd",
+which was right in 2021; the source note now says so, or the judgment and the current text
+read as a contradiction. These matter because the citations are shown to someone who may take
+them to an employer or a union.
+
+**Søndagsarbeid was reading the calendar, not the law.** § 10-10 første ledd does not say "work
+on a Sunday". It says there shall be no work *from 18:00 the day before a Sunday or holiday
+until 22:00 the day before the next virkedag*, from 15:00 before julaften, påskeaften and
+pinseaften, and that work inside those periods is søn- og helgedagsarbeid. The rule matched on
+the date being a Sunday or a holiday, so it missed every Saturday evening from 18:00 — in a
+café or a shop, most of them.
+
+`sundayWorkWindows` now builds the statutory windows and the rule asks how much of each shift
+falls inside one. Two consequences fall straight out of the wording, and both are now pinned by
+tests:
+
+- A run of Sunday plus holidays is **one** window, to 22:00 on its last day. Christmas 2026 is
+  Friday the 25th through Sunday the 27th: one window from 15:00 on julaften.
+- Easter is **two** windows, not one, because påskeaften is a Saturday and not a statutory
+  holiday — so it is a virkedag, and the first window has to close at 22:00 on langfredag. My
+  own first expectation here was legally wrong and the implementation was right.
+
+On the demo this changed one figure: Saturday 23 May 2026 is pinseaften (Easter 2026 is 5 April,
+so Pentecost is 24 May), and a 10:00–18:00 shift that day holds three hours of helgedagsarbeid
+which previously counted as none. Worked søn- og helgedager went from 2 to 3. No money total
+moved, because this rule carries no amount.
+
+**The § 10-12 exemption was half-applied.** It disapplies the whole of chapter 10 for a ledende
+or særlig uavhengig stilling, bar § 10-2 første, andre og fjerde ledd. The engine skipped the
+five working-time rules, but `contract_contents` also checks the work plan (§ 10-3) and the
+record of hours (§ 10-7) — both in chapter 10 — and kept flagging them. It no longer does,
+while the § 14-6 requirements it also checks stand regardless, since those are not in chapter 10.
+
+§ 10-12 was the one rule marked `ikke_verifisert`; it is now verified and the behaviour is
+tested.
+
+### What is verified, and what that is worth
+
+Every rule now reads `verified: 'lovtekst'`, a new value meaning the wording and the numbers
+were compared against the statute's own words in `docs/lovtekst/`. Spot-checked and confirmed
+unchanged: 9 h/40 h (§ 10-4 første ledd), the 40 % overtime supplement (§ 10-6 ellevte ledd),
+10/25/200 hours of overtime (§ 10-6 fjerde ledd), 11 h and 35 h rest with the 8 h and 28 h
+floors by agreement (§ 10-8), breaks at 5½ and 8 hours (§ 10-9), night from 21:00 to 06:00 and
+the three-hour test with an eight-hour average over four weeks (§ 10-11), "mer enn tre år"
+(§ 14-9 sjuende ledd), 25 and 18 virkedager (ferieloven §§ 5 and 7), and 10,2 % plus 2,3
+percentage points (ferieloven § 10).
+
+This raises the floor; it does not make the tool legal advice. A correct citation is not the
+same as a correct application to someone's case, and the disclaimer stays exactly where it was.

@@ -10,7 +10,7 @@
  * Sunday work is handled by the weekend supplement instead. See DECISIONS.md.
  */
 import type { DateStr } from './schemas';
-import { addDays } from './time';
+import { addDays, weekdayIso } from './time';
 
 /** Easter Sunday, anonymous Gregorian algorithm. */
 export function easterSunday(year: number): DateStr {
@@ -68,4 +68,102 @@ export function holidayName(date: DateStr): string | null {
 
 export function isHoliday(date: DateStr): boolean {
   return holidayName(date) !== null;
+}
+
+/**
+ * A virkedag, as ferieloven § 5 nr. 1 defines it: every day that is neither a Sunday nor a
+ * statutory holiday. Saturday is a virkedag.
+ */
+export function isVirkedag(date: DateStr): boolean {
+  return weekdayIso(date) !== 7 && !isHoliday(date);
+}
+
+/**
+ * The three eves where the protected period starts at 15:00 rather than 18:00:
+ * julaften, påskeaften and pinseaften (AML § 10-10 første ledd andre punktum).
+ */
+export function isSpecialEve(date: DateStr): boolean {
+  const year = Number(date.slice(0, 4));
+  const easter = easterSunday(year);
+  return (
+    date === `${year}-12-24` || date === addDays(easter, -1) || date === addDays(easter, 48)
+  );
+}
+
+/** One stretch of time the law counts as søn- og helgedagsarbeid. */
+export interface SundayWindow {
+  /** The day the window opens, and the minute of that day it opens at. */
+  fromDate: DateStr;
+  fromMinute: number;
+  /** The day the window closes, and the minute of that day it closes at. */
+  toDate: DateStr;
+  toMinute: number;
+  /** The Sundays and holidays the window protects, for naming the finding. */
+  days: DateStr[];
+}
+
+/**
+ * The windows AML § 10-10 første ledd calls søn- og helgedagsarbeid.
+ *
+ * The statute does not say "work on a Sunday". It says there shall be no work *from 18:00 the
+ * day before a Sunday or holiday until 22:00 the day before the next working day* — and 15:00
+ * instead of 18:00 before julaften, påskeaften and pinseaften — and that work inside those
+ * periods counts as søn- og helgedagsarbeid.
+ *
+ * Two things follow that a calendar-day reading gets wrong. A Saturday evening shift from
+ * 18:00 is Sunday work, which matters to nearly everyone working in a shop or a café. And a
+ * run of Sunday plus holidays is one window to 22:00 on its last day, so the Easter weekend is
+ * protected throughout rather than only on its Sundays.
+ */
+export function sundayWorkWindows(from: DateStr, to: DateStr): SundayWindow[] {
+  const windows: SundayWindow[] = [];
+  // Reach a day past each end, so a window straddling the range is still produced whole.
+  let day = addDays(from, -1);
+  const last = addDays(to, 1);
+
+  while (day <= last) {
+    if (isVirkedag(day)) {
+      day = addDays(day, 1);
+      continue;
+    }
+    // A run of consecutive non-virkedager is one window.
+    const run: DateStr[] = [];
+    let cursor = day;
+    while (cursor <= addDays(last, 2) && !isVirkedag(cursor)) {
+      run.push(cursor);
+      cursor = addDays(cursor, 1);
+    }
+    const eve = addDays(run[0]!, -1);
+    windows.push({
+      fromDate: eve,
+      fromMinute: isSpecialEve(eve) ? 15 * 60 : 18 * 60,
+      toDate: run[run.length - 1]!,
+      toMinute: 22 * 60,
+      days: run,
+    });
+    day = cursor;
+  }
+
+  // Scanning starts a day early so a window straddling the start is produced whole; drop the
+  // ones that turn out to lie entirely outside what was asked for.
+  return windows.filter((window) => window.toDate >= from && window.fromDate <= to);
+}
+
+/** Minutes of one day's stretch of work that fall inside søn- og helgedagsarbeid. */
+export function sundayWorkMinutes(
+  date: DateStr,
+  startMinute: number,
+  endMinute: number,
+  windows: readonly SundayWindow[],
+): number {
+  let total = 0;
+  for (const window of windows) {
+    // Express the window on this date's timeline; a day outside it contributes nothing.
+    const opens =
+      date < window.fromDate ? Number.POSITIVE_INFINITY : date === window.fromDate ? window.fromMinute : 0;
+    const closes =
+      date > window.toDate ? Number.NEGATIVE_INFINITY : date === window.toDate ? window.toMinute : 24 * 60;
+    total += Math.max(0, Math.min(endMinute, closes) - Math.max(startMinute, opens));
+  }
+  return total;
 }

@@ -1,0 +1,210 @@
+Lov om ferie (ferieloven), LOV-1988-04-29-21
+Hentet ordrett fra https://lovdata.no/dokument/NL/lov/1988-04-29-21 den 2026-10-06.
+Utdrag: §§ 5, 6, 7 og 10 — de paragrafene reglene i rules/no_default.json viser til.
+
+================================================================================
+§ 5. Feriefritidens lengde
+
+(1) (Den alminnelige feriefritid)
+
+Arbeidsgiver plikter å sørge for at arbeidstaker gis feriefritid på 25 virkedager hvert
+ferieår. Arbeidstaker plikter å avvikle feriefritiden hvert år, jf. likevel denne paragraf
+nr. 5, § 7 nr. 3 første ledd og § 9 nr. 1 og 2. Som virkedager regnes alle dager som ikke er
+søndager eller lovbestemte helge- eller høytidsdager. Virkedager i ferien som etter
+arbeidstidsordningen likevel ville vært fridager for vedkommende arbeidstaker, regnes som
+feriefritid og går til fradrag i dagtallet etter første punktum, samt nr. 2 og 3.
+
+(2) (Ekstraferie for arbeidstakere over 60 år)
+
+Arbeidstaker som fyller 60 år i løpet av ferieåret, skal gis ekstraferie på 6 virkedager.
+Deles ekstraferien, kan arbeidstaker bare kreve å få fri så mange arbeidsdager som vedkommende
+normalt har i løpet av en uke.
+
+(3) (Feriens lengde ved ansettelse i ferieåret)
+
+Arbeidstaker som tiltrer senest 30 september i ferieåret, har rett til full feriefritid, jfr
+likevel § 7 nr. 1. Arbeidstaker som tiltrer etter dette tidspunkt, har rett til feriefritid på
+6 virkedager.
+
+Arbeidstaker kan bare kreve feriefritid etter forrige ledd i den utstrekning det godtgjøres at
+full ferie ikke allerede er avviklet hos annen arbeidsgiver tidligere i ferieåret.
+
+(4) (Tilleggsfritid ved søndags- og skiftarbeid, uregelmessig arbeidstid mv)
+
+Arbeidstaker som arbeider på søndager kan kreve å få arbeidsfri enten på søndag som faller
+umiddelbart før ferien, eller på søndag umiddelbart etter. Dette gjelder likevel bare ved
+avvikling av ferieperiode som omfatter minst 6 virkedager.
+
+Arbeidstaker kan kreve at tiden fra arbeidets avslutning før ferien til det påbegynnes etter
+ferien skal utgjøre til sammen minst 16 timer i tillegg til feriefritiden etter bestemmelsene
+ovenfor. Dette gjelder likevel bare ved avvikling av ferieperiode som omfatter minst 18
+virkedager.
+
+(5) (Arbeidstaker uten full opptjening)
+
+Arbeidstaker kan kreve å få feriefritid etter bestemmelsene ovenfor uavhengig av opptjeningen
+av feriepenger. Arbeidstaker kan motsette seg avvikling av feriefritid og eventuell
+tilleggsfritid i den utstrekning feriepengene ikke dekker lønnsbortfallet under
+feriefraværet. Hvis en virksomhet innstiller driften helt eller delvis i forbindelse med
+ferieavvikling, kan likevel alle arbeidstakere som berøres av stansen pålegges å avvikle ferie
+og eventuell tilleggsfritid av samme lengde.
+
+(6) (Fravikelighet)
+
+Bestemmelsene i nr. 4 annet ledd kan fravikes ved tariffavtale.
+
+================================================================================
+§ 6. Feriefastsetting, endring og erstatning
+
+(1) (Hvem som bestemmer tiden for ferie)
+
+Arbeidsgiver skal i god tid før ferien drøfte fastsetting av feriefritid og oppsetting av
+ferielister med den enkelte arbeidstaker eller vedkommendes tillitsvalgte. Oppnås ikke
+enighet, fastsetter arbeidsgiver tiden for ferien innenfor de grenser som følger av §§ 7-9.
+
+Arbeidstaker over 60 år bestemmer selv tiden for avvikling av ekstraferien, med mindre annet
+er avtalt. Ekstraferien kan tas samlet eller med en eller flere dager om gangen.
+
+(2) (Underretning)
+
+Arbeidstaker kan kreve å få underretning om feriefastsettingen tidligst mulig og senest 2
+måneder før ferien tar til, såfremt ikke særlige grunner er til hinder for dette.
+
+Arbeidstaker over 60 år skal gi arbeidsgiver minst 2 ukers varsel før avvikling av ekstraferie.
+
+(3) (Endring av fastsatt feriefritid, erstatning mv)
+
+Tiden for ferieperiode som arbeidstaker har mottatt underretning om, kan endres av arbeidsgiver
+hvis det er nødvendig på grunn av uforutsette hendinger. Slik endring kan bare foretas når
+avvikling av den fastsatte ferien på grunn av uforutsette hendinger vil skape vesentlige
+driftsproblemer, og det ikke kan skaffes stedfortreder.
+
+Arbeidsgiver skal på forhånd drøfte spørsmål om endring med arbeidstaker. Arbeidstaker har rett
+til å la seg bistå av en tillitsvalgt under drøftingen. Under drøftingen plikter arbeidstaker å
+gi opplysninger om merutgifter som vil bli krevet erstattet.
+
+Arbeidstaker kan kreve erstatning for dokumenterte merutgifter som følger av en omlegging av
+ferien. Merutgifter som arbeidstaker ikke har gitt opplysninger om under drøfting, kan bare
+kreves erstattet i den utstrekning de fremstår som nærliggende følger av omleggingen.
+
+Bestemmelsene ovenfor gjelder ikke i tilfeller hvor tiden for ferien endres etter §§ 8 og 9.
+
+(4) (Fravikelighet)
+
+Reglene i denne paragraf kan fravikes ved tariffavtale eller annen avtale.
+
+================================================================================
+§ 7. Tiden for ferie
+
+(1) (Hovedferien)
+
+Arbeidstaker kan kreve at hovedferie som omfatter 18 virkedager gis i hovedferieperioden 1 juni
+– 30 september. Dette gjelder likevel ikke for arbeidstaker som tiltrer etter 15 august i
+ferieåret. Ferie som er fastsatt til tiden 1 juni – 30 september, og som utsettes i medhold av
+§ 9, kan ikke kreves avviklet på et senere tidspunkt i denne perioden. Arbeidstaker som har
+avviklet permisjonstid med foreldrepenger etter folketrygdloven §§ 14-1 til 14-15, i hele
+hovedferieperioden, kan motsette seg å avvikle hovedferien innen ferieårets utløp.
+
+(2) (Restferien)
+
+Arbeidstaker kan kreve at restferien (7 virkedager) gis samlet innenfor ferieåret.
+
+(3) (Forskuddsferie og overføring av feriedager)
+
+Det kan inngås skriftlig avtale om avvikling av forskuddsferie på inntil 12 virkedager og
+overføring av inntil 12 virkedager ferie til det påfølgende ferieår. Forskuddsferie og
+overføring av ferie ut over dette kan ikke avtales.
+
+Ferie som i strid med lovens bestemmelser eller på grunn av forhold som nevnt i § 9 nr. 1 og 2,
+ikke er avviklet ved ferieårets utløp, skal overføres til det påfølgende ferieår. Hvis
+manglende ferieavvikling skyldes arbeidsgiver kan arbeidstaker i tillegg til overføring kreve
+erstatning etter § 14.
+
+(4) (Fravikelighet)
+
+Reglene i denne paragraf om tiden for ferie innen ferieåret kan fravikes ved tariffavtale eller
+annen avtale.
+
+================================================================================
+§ 10. Beregning av feriepenger
+
+(1) (Feriepengegrunnlaget)
+
+Feriepenger fra arbeidsgiver beregnes på grunnlag av arbeidsvederlag som er utbetalt i
+opptjeningsåret. Som arbeidsvederlag regnes ikke utbetalinger som gjelder dekning av utgifter
+til bilhold, kost, losji o l.
+
+Følgende ytelser inngår ikke i feriepengegrunnlaget:
+
+a. feriepenger etter loven her som er utbetalt i opptjeningsåret,
+
+b. andel av nettoutbytte,
+
+c. fast godtgjøring som opptjenes og utbetales uavhengig av fravær på ferie eller
+
+d. verdien av varer, tjenester eller andre fordeler som ikke er pengeytelser. Verdien av hel
+eller delvis kost som mottas som del av arbeidsvederlaget skal likevel tas med i
+feriepengegrunnlaget.
+
+Feriepengegrunnlaget skal fremgå av sammenstilling som sendes arbeidstaker etter
+skatteforvaltningsforskriften § 7-12-2 andre ledd.
+
+(2) (Den alminnelige prosentsats)
+
+Arbeidstaker har rett til feriepenger fra arbeidsgiver med 10,2 prosent av feriepengegrunnlaget
+(jf nr. 1).
+
+(3) (Forhøyet prosentsats for arbeidstakere over 60 år)
+
+For arbeidstaker over 60 år med rett til ekstraferie etter § 5 nr. 2 forhøyes prosentsatsen med
+2,3 prosentpoeng.
+
+Feriepenger etter første ledd ytes ikke for den del av feriepengegrunnlaget som overstiger 6
+ganger folketrygdens grunnbeløp. Ved beregningen skal det regnes med det grunnbeløp som gjaldt
+31. desember i opptjeningsåret. Fratrer arbeidstaker i opptjeningsåret, skal det regnes med det
+grunnbeløp som gjaldt på fratredelsestidspunktet.
+
+(4) (Opptjening av feriepenger under sykdom, foreldrepermisjon mv.)
+
+Som arbeidsvederlag etter nr. 1 regnes også sykepenger utbetalt av arbeidsgiver i
+arbeidsgiverperioder. Tilsvarende gjelder omsorgspenger for inntil 10 dager som er betalt av
+arbeidsgiver ved barns eller barnepassers sykdom, jf. folketrygdloven kapittel 9.
+
+Trygden betaler feriepenger av:
+
+a. sykepenger utbetalt av folketrygden for inntil 48 dager hvert opptjeningsår, jf.
+folketrygdloven § 8-33. I tillegg betaler trygden feriepenger av sykepenger som arbeidsgiver
+får refundert fra trygden for arbeidstakere som er unntatt fra reglene om arbeidsgiverperioden
+etter folketrygdloven § 8-20 eller av omsorgspenger ved barns eller barnepassers sykdom ut over
+10 dager etter folketrygdloven § 9-8, jf. § 9-9. Trygden betaler også feriepenger for inntil 12
+uker (60 sykepengedager) av opplæringspenger og pleiepenger ved barns sykdom etter
+folketrygdloven § 9-17
+
+b. svangerskapspenger for arbeidstakere for inntil 64 dager av stønadsperioden jf.
+folketrygdloven § 14-4.
+
+c. foreldrepenger til arbeidstakere for inntil 12 uker med full sats eller for inntil 15 uker
+med 80 prosent av full sats jf. folketrygdloven § 14-8.
+
+(5) (Opptjening av feriepenger under militær og sivil plikttjeneste)
+
+Arbeidstaker som har arbeidet minst 3 måneder hos en arbeidsgiver, opptjener feriepenger hos
+denne under ulønnet fravær på grunn av:
+
+a. pliktig militærtjeneste i henhold til forsvarsloven,
+
+b. pliktig tjeneste i Sivilforsvaret eller Heimevernet
+
+i opptil 3 måneder til sammen hvert opptjeningsår.
+
+Feriepengene utregnes på grunnlag av det sykepengegrunnlag arbeidstakeren har etter
+folketrygdloven §§ 8-28 til 8-30 den dag permisjonen tar til.
+
+Arbeidstaker som ikke har vært i arbeid i virksomheten etter fraværet kan ikke kreve
+feriepenger etter første ledd, med mindre uteblivelsen skyldes arbeidsgivers oppsigelse eller
+helsemessige forhold.
+
+(6) (Fravikelighet)
+
+Reglene i denne paragraf om beregning av feriepenger fra arbeidsgiver, kan fravikes ved
+tariffavtale.

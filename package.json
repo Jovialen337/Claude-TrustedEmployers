@@ -13,7 +13,8 @@
     "demo": "tsx scripts/demo-check.ts",
     "smoke": "node scripts/smoke.mjs",
     "build:offline": "node scripts/build-offline.mjs",
-    "smoke:offline": "node scripts/smoke-offline.mjs"
+    "smoke:offline": "node scripts/smoke-offline.mjs",
+    "hent-lovtekst": "node scripts/hent-lovtekst.mjs"
   },
   "engines": {
     "node": ">=20"

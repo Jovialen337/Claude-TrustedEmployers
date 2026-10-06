@@ -19,6 +19,14 @@ interface Requirement {
 }
 
 export const contractContents: RuleFn = (context: RuleContext): Flag[] => {
+  /**
+   * § 10-12 første og andre ledd switch off the whole of chapter 10 for a ledende or særlig
+   * uavhengig stilling. The work plan (§ 10-3) and the record of hours worked (§ 10-7) are in
+   * that chapter, so they go too — while everything else this rule checks is § 14-6, which
+   * stands regardless. The engine cannot do this for us: it skips whole rules, and this one
+   * spans both chapters.
+   */
+  const exemptFromChapterTen = context.contract.workingTimeExemption !== 'ingen';
   const range = context.dataRange;
   if (!range) return [];
   const contract = context.contract;
@@ -97,7 +105,7 @@ export const contractContents: RuleFn = (context: RuleContext): Flag[] => {
   }
 
   /* ------------ retten til å få vite hva du har jobbet, og når du skal jobbe */
-  if (context.shifts.length === 0) {
+  if (context.shifts.length === 0 && !exemptFromChapterTen) {
     flags.push(
       buildFlag(context, {
         key: 'oversikt-over-arbeidstiden',
@@ -117,7 +125,7 @@ export const contractContents: RuleFn = (context: RuleContext): Flag[] => {
   }
 
   const plannedOnly = context.shifts.filter((shift) => shift.kind === 'planlagt').length;
-  if (plannedOnly > 0) {
+  if (plannedOnly > 0 && !exemptFromChapterTen) {
     flags.push(
       buildFlag(context, {
         key: 'arbeidsplan',

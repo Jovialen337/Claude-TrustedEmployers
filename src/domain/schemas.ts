@@ -342,7 +342,18 @@ export const Rule = z.object({
   severity: Severity,
   params: RuleParams.default({}),
   sources: z.array(RuleSource).default([]),
-  verified: z.enum(['lovdata', 'sekundaerkilde', 'ikke_verifisert']).default('ikke_verifisert'),
+  /**
+   * How the rule's wording and numbers were checked.
+   *
+   * `lovtekst` means someone compared them against the statute's own words, from the text
+   * kept in `docs/lovtekst/` — which is where the paragraph numbers in `sources` come from.
+   * `sekundaerkilde` means a summary by a union, an agency or a law firm was used instead,
+   * which is how three paragraph references came to be off by one: the statute had gained a
+   * paragraph since those summaries were written.
+   */
+  verified: z
+    .enum(['lovtekst', 'lovdata', 'sekundaerkilde', 'ikke_verifisert'])
+    .default('ikke_verifisert'),
 });
 
 export const RuleSet = z.object({

@@ -5,9 +5,15 @@
  * necessary — which it often is in a café or a shop — so the flag is about the *pattern*: you
  * are entitled to time off every other Sunday, and a written agreement is needed for anything
  * denser than that.
+ *
+ * What counts as søn- og helgedagsarbeid is § 10-10 første ledd's own definition, not the
+ * calendar day: from 18:00 the day before until 22:00 the day before the next virkedag, and
+ * from 15:00 on julaften, påskeaften and pinseaften. `sundayWorkWindows` builds those windows;
+ * this rule only asks how much of each shift falls inside one. Reading it as "the date is a
+ * Sunday" missed every Saturday evening from 18:00, which in a café or a shop is most of them.
  */
 import { effectiveShifts, segmentsOf } from '../aggregate';
-import { holidayName, isHoliday } from '../holidays';
+import { holidayName, isHoliday, sundayWorkMinutes, sundayWorkWindows } from '../holidays';
 import { formatHours, roundHours } from '../money';
 import type { DateStr, Flag } from '../schemas';
 import { formatDateLong, weekdayIso } from '../time';
@@ -28,11 +34,21 @@ export const sundayWork: RuleFn = (context: RuleContext): Flag[] => {
   const minFreeShare = numberParam(context.rule, 'free_share_of_sundays', 0.5);
   const toleranceHours = numberParam(context.rule, 'tolerance_hours', 0.25);
 
+  const windows = sundayWorkWindows(range.start, range.end);
   const segments = segmentsOf(effectiveShifts(context.workTimeShifts));
   const byDate = new Map<DateStr, number>();
   for (const segment of segments) {
-    if (weekdayIso(segment.date) !== 7 && !isHoliday(segment.date)) continue;
-    byDate.set(segment.date, (byDate.get(segment.date) ?? 0) + segment.workedMinutes / 60);
+    const protectedMinutes = sundayWorkMinutes(
+      segment.date,
+      segment.startMin,
+      segment.endMin,
+      windows,
+    );
+    if (protectedMinutes === 0) continue;
+    // Breaks are spread across the shift, so scale them by the share that falls in the window.
+    const share = segment.grossMinutes === 0 ? 0 : protectedMinutes / segment.grossMinutes;
+    const worked = protectedMinutes - segment.breakMinutes * share;
+    byDate.set(segment.date, (byDate.get(segment.date) ?? 0) + Math.max(0, worked) / 60);
   }
 
   const worked: SundayWorked[] = [...byDate.entries()]

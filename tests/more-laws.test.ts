@@ -247,6 +247,27 @@ describe('unntak fra arbeidstidsreglene (§ 10-12)', () => {
     expect(flagsFor(ordinary, 'working_time_exemption')).toHaveLength(0);
   });
 
+  it('slår også av arbeidsplan og timeoversikt, som står i samme kapittel', () => {
+    // § 10-12 første og andre ledd: "Bestemmelsene i dette kapittel kommer ikke til anvendelse
+    // for arbeidstaker i ledende stilling" (og i særlig uavhengig stilling), med unntak av
+    // § 10-2 første, andre og fjerde ledd. Arbeidsplanen (§ 10-3) og oversikten over
+    // arbeidstiden (§ 10-7) står i kapittel 10, så de faller bort med resten.
+    // Begge har en lønnsslipp, så perioden finnes, og ingen vakter — da er det bare unntaket
+    // som skiller dem.
+    const utenVakter = { shifts: [], payslips: [payslip(AUGUST.start, AUGUST.end, [ordinaryLine(40)])] };
+
+    const exempt = check({ contract: contract({ workingTimeExemption: 'ledende' }), ...utenVakter });
+    const ids = flagsFor(exempt, 'contract_contents').map((f) => f.id);
+    expect(ids).not.toContain('contract_contents:oversikt-over-arbeidstiden');
+    expect(ids).not.toContain('contract_contents:arbeidsplan');
+
+    // Men kravene til hva avtalen skal inneholde står i § 14-6 og gjelder fortsatt.
+    const ordinary = check({ contract: contract({}), ...utenVakter });
+    expect(flagsFor(ordinary, 'contract_contents').map((f) => f.id)).toContain(
+      'contract_contents:oversikt-over-arbeidstiden',
+    );
+  });
+
   it('sjekker fortsatt lønn og tillegg for en unntatt stilling', () => {
     const exempt = check({
       contract: contract({ workingTimeExemption: 'ledende', contractedHoursPerWeek: 48 }),

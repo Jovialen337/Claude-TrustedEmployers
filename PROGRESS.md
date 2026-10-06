@@ -140,3 +140,21 @@ from the first unticked box. Do not start over.
   name now carries a counter and a random suffix; two new tests cover it and were checked against
   the old code first. The original flake remains unexplained after ~30 runs; it has not
   reappeared. 279 unit tests, 26 smoke checks, 44 offline smoke checks.
+
+- [x] 25. Reglene kontrollert mot selve lovteksten — og fire feil rettet
+
+- 2026-10-06 — Closed the standing caveat. lovdata.no blocks this container's IP with its own
+  Varnish IPS (not the egress proxy — the CONNECT tunnel succeeds), so it was not worked around:
+  arbeidsmiljøloven came verbatim from Arbeidstilsynet, the agency that enforces it, and
+  ferieloven from lovdata via WebFetch, which fetches Claude-side. The text lives in
+  docs/lovtekst/ with sources and dates; `npm run hent-lovtekst` re-fetches and checks 23
+  operative formulations.
+
+  The check found four errors: three § 14-15 paragraph references off by one (that section
+  gained a paragraph since the summaries were written), a note saying "bokstav c til f" where
+  the statute says "c, e og f", søndagsarbeid reading the calendar date instead of § 10-10's
+  18:00→22:00 window (missing every Saturday evening), and the § 10-12 exemption leaving § 10-3
+  and § 10-7 switched on. All fixed, all tested. § 10-12 was the one rule marked
+  ikke_verifisert; every rule now reads verified: 'lovtekst'.
+
+  289 unit tests, 26 smoke checks, 44 offline smoke checks.

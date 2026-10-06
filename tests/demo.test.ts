@@ -77,7 +77,13 @@ describe('demoen', () => {
     // ikke søndager, og ikke to på rad.
     const flag = byId.get('sunday_work:sondagsarbeid')!;
     expect(flag.severity).toBe('til_info');
-    expect(flag.evidence.find((e) => e.label === 'Jobbet')!.value).toBe('2');
+    // Three, not two: 23 May 2026 is pinseaften (Easter is 5 April, so Pentecost is 24 May),
+    // and § 10-10 første ledd andre punktum opens the protected period at 15:00 on that day.
+    // The 10:00–18:00 shift therefore holds three hours of helgedagsarbeid. Reading the rule
+    // off the calendar date alone scored it as none.
+    expect(flag.evidence.find((e) => e.label === 'Jobbet')!.value).toBe('3');
+    const pinseaften = flag.evidence.find((e) => e.label.includes('23. mai'));
+    expect(pinseaften?.value).toBe('2,81 t');
   });
 
   it('sier fra om manglende hovedferie uten å påstå noe', () => {

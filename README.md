@@ -233,9 +233,12 @@ lønnsslipper sier ingenting om dette, så vi later ikke som om vi vurderer det:
   og hvor mange uker vi faktisk har sett på. Ferie og sykefravær teller ikke med i beregningen.
 - **Om ansettelsen har vært sammenhengende** vet vi ikke, så treårsregelen i § 14-9 er et signal
   om å undersøke, ikke en konklusjon.
-- **Regelteksten er kontrollert mot omtale av lovene, ikke mot lovdata.no**, fordi maskinen som
-  bygget dette ikke hadde tilgang dit. Hver regel sier selv hvordan den er kontrollert. Se
-  [DECISIONS.md](DECISIONS.md).
+- **Regelteksten er nå kontrollert mot selve lovteksten**, ord for ord. Teksten ligger i
+  [`docs/lovtekst/`](docs/lovtekst/) med kilde og dato, så kontrollen kan etterprøves, og
+  `npm run hent-lovtekst` henter den på nytt og sier hva som har endret seg. Kontrollen rettet
+  tre paragrafhenvisninger og to regler — se [`docs/lovtekst/README.md`](docs/lovtekst/README.md).
+  Det gjør ikke dette til juridisk rådgivning: at henvisningen er riktig er ikke det samme som
+  at anvendelsen på din sak er riktig.
 - **Overlappende tillegg legges sammen.** Har du både helgetillegg og helligdagstillegg, og en
   vakt faller på en helligdag som er en søndag, regner vi begge. Mange avtaler gir bare det
   høyeste.
