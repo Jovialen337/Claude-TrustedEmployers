@@ -131,3 +131,12 @@ from the first unticked box. Do not start over.
   `npm run smoke:offline` is now 44 checks, including that the fødselsnummer and kontonummer
   never reach the call while the employer and rate do, and that the kroner land as integer øre.
   277 unit tests.
+
+- [x] 24. Samtidige lagringer ødelegger ikke lenger for hverandre
+
+- 2026-10-06 — Stress-running the suite (shuffled and concurrent) while chasing an unreproducible
+  flake surfaced a real bug: `writeWorkspace`'s temp file was named by pid alone, so two
+  overlapping saves raced and the loser threw ENOENT — a save that silently did not happen. The
+  name now carries a counter and a random suffix; two new tests cover it and were checked against
+  the old code first. The original flake remains unexplained after ~30 runs; it has not
+  reappeared. 279 unit tests, 26 smoke checks, 44 offline smoke checks.

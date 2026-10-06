@@ -5,6 +5,12 @@
  * testing is the edges themselves and — the one that would really hurt — that they still match
  * the shapes the rest of the app expects. A storage function added on one side and forgotten on
  * the other would break only in the built file, which no unit test would otherwise reach.
+ *
+ * These tests must run sequentially. They stub `globalThis.localStorage` and `globalThis.claude`
+ * and reset the module registry, which is shared by every test in the file, so running them with
+ * `--sequence.concurrent` makes them trip over each other. That is a property of the tests, not
+ * of the code; vitest runs files sequentially within a worker by default, which is what they
+ * rely on.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as browserStore from '@/offline/browserStore';

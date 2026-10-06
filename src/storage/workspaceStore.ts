@@ -29,12 +29,23 @@ export async function readWorkspace(): Promise<Workspace> {
   }
 }
 
+/**
+ * How many writes this process has started. Part of the temp filename, because the pid alone
+ * is not unique *within* a process: two saves that overlap — a page that stores a document and
+ * the record it came from, a second tab, two requests arriving together — would otherwise pick
+ * the same temp path, and the loser's rename fails with ENOENT after the winner has moved it.
+ * Found by running the test suite concurrently, which is the only thing here that writes twice
+ * at once; the symptom in the app would have been a save that simply did not happen.
+ */
+let writeCounter = 0;
+
 /** Write atomically (temp file + rename) so a crash cannot leave a half-written workspace. */
 export async function writeWorkspace(workspace: Workspace): Promise<Workspace> {
   const parsed = Workspace.parse({ ...workspace, updatedAt: new Date().toISOString() });
   await fs.mkdir(dataDir(), { recursive: true });
   const target = workspacePath();
-  const temp = `${target}.tmp-${process.pid}`;
+  writeCounter += 1;
+  const temp = `${target}.tmp-${process.pid}-${writeCounter}-${Math.random().toString(36).slice(2, 8)}`;
   await fs.writeFile(temp, `${JSON.stringify(parsed, null, 2)}\n`, 'utf8');
   await fs.rename(temp, target);
   return parsed;

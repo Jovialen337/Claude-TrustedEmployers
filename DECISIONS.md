@@ -558,3 +558,36 @@ Two details worth recording:
 Opened as a downloaded file there is no viewer, `use()` is absent, reading stays off, and the
 page says which of the two it is. Images go through only where `sample.limits()` reports them,
 and the existing consent gate for unmaskable images is unchanged.
+
+### The atomic write was not atomic against itself
+
+Chasing a unit test that had failed once and would not reproduce, the suite was run with
+`--sequence.shuffle --sequence.concurrent`. That did not reproduce it either, but it did surface
+a real bug in `writeWorkspace`:
+
+```
+ENOENT: no such file or directory,
+rename '/tmp/…/workspace.json.tmp-2812' -> '/tmp/…/workspace.json'
+```
+
+The temp file was named `workspace.json.tmp-${process.pid}`. The pid makes it unique between
+processes but not *within* one, so two writes that overlap pick the same path: the first renames
+it, the second's rename finds nothing, and it throws. The write is atomic against a crash, which
+is what it was written for, but not against another write.
+
+That is not only a test artifact. Two saves overlap in the app whenever a page stores a document
+and the record built from it, when a second tab is open, or when two requests simply arrive
+together — and the symptom is the worst kind: a save that reports failure, or silently does not
+happen, after the user pressed confirm. The temp name now carries a per-process counter and a
+random suffix as well as the pid.
+
+`tests/storage.test.ts` gained two tests for it: two concurrent writes must both resolve and
+leave a whole, readable file, and twelve at once must leave nothing behind but `workspace.json`.
+Both fail on the old name and pass on the new one — checked by reverting the fix, since a test
+that passes either way proves nothing.
+
+The original flake is still unexplained. It has not reappeared in roughly thirty full runs,
+including six with shuffled order. The concurrency run also fails about nineteen tests that
+stub globals or share a temp directory, which is a property of those tests rather than of the
+code; `tests/offline.test.ts` now says in its header that it must run sequentially, so nobody
+turns concurrency on and reads the result as a regression.
