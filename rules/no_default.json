@@ -336,9 +336,21 @@
       "sources": [
         {
           "law": "Allmenngjøringsloven",
-          "paragraph": "§ 1 og § 6",
-          "url": "https://lovdata.no/lov/1993-06-04-58",
-          "note": "Tariffnemnda kan fastsette at en landsomfattende tariffavtale helt eller delvis skal gjelde for alle arbeidstakere i en bransje."
+          "paragraph": "§ 5",
+          "url": "https://lovdata.no/lov/1993-06-04-58/§5",
+          "note": "Tariffnemnda kan treffe vedtak om at en landsomfattende tariffavtale helt eller delvis skal gjelde for alle arbeidstakere som utfører arbeid av den art avtalen omfatter, i en bransje eller del av en bransje."
+        },
+        {
+          "law": "Allmenngjøringsloven",
+          "paragraph": "§ 6",
+          "url": "https://lovdata.no/lov/1993-06-04-58/§6",
+          "note": "Et vedtak om allmenngjøring kan bare gjelde de delene av tariffavtalen som regulerer lønns- og arbeidsvilkår — derfor er det minstelønnssatsen som blir bindende for alle i bransjen."
+        },
+        {
+          "law": "Allmenngjøringsloven",
+          "paragraph": "§ 1",
+          "url": "https://lovdata.no/lov/1993-06-04-58/§1",
+          "note": "Lovens formål er å sikre utenlandske arbeidstakere lønns- og arbeidsvilkår som er likeverdige med de vilkår norske arbeidstakere har. Satsen gjelder likevel alle som jobber i bransjen."
         },
         {
           "law": "Arbeidstilsynet",
@@ -378,12 +390,10 @@
       "id": "feriepenger",
       "enabled": true,
       "title": "Feriepenger — ser grunnlaget riktig ut?",
-      "explanation": "Feriepenger er minst 10,2 % av feriepengegrunnlaget, som i hovedsak er all lønn du har fått utbetalt i året før. Har du avtale om fem uker ferie, er satsen vanligvis 12 %. Denne regelen sammenligner satsen og grunnlaget på lønnsslippene med det vi regner ut fra lønna di, og flagger avvik som noe du bør sjekke — ikke som en sikker feil, siden hva som inngår i grunnlaget varierer. Satsen hentes fra kontrakten din når den står der, men aldri under ferielovens minimum.",
+      "explanation": "Feriepenger er minst 10,2 % av feriepengegrunnlaget, som i hovedsak er all lønn du har fått utbetalt i året før. Har du fem ferieuker, er satsen vanligvis 12 % — det følger av tariffavtalen, ikke av ferieloven. Er du over 60 år, legger ferieloven 2,3 prosentpoeng på satsen din. Denne regelen sammenligner satsen og grunnlaget på lønnsslippene med det vi regner ut fra lønna di, og flagger avvik som noe du bør sjekke — ikke som en sikker feil, siden hva som inngår i grunnlaget varierer. Satsen hentes fra kontrakten din når den står der, men aldri under ferielovens minimum.",
       "severity": "bor_sjekkes",
       "params": {
         "rate_percent_statutory": 10.2,
-        "rate_percent_five_weeks": 12.0,
-        "rate_percent_over_60": 12.5,
         "tolerance_ore": 1000
       },
       "sources": [
@@ -391,13 +401,25 @@
           "law": "Ferieloven",
           "paragraph": "§ 10 andre ledd",
           "url": "https://lovdata.no/lov/1988-04-29-21/§10",
-          "note": "Feriepengene utgjør 10,2 % av feriepengegrunnlaget. Ved avtalefestet femte ferieuke er satsen vanligvis 12 %. For arbeidstakere over 60 år kommer et tillegg (12,5 %)."
+          "note": "Feriepengene utgjør 10,2 % av feriepengegrunnlaget. Det er lovens minimum, og det eneste tallet dette leddet oppgir."
         },
         {
           "law": "Ferieloven",
           "paragraph": "§ 10 første ledd",
           "url": "https://lovdata.no/lov/1988-04-29-21/§10",
           "note": "Feriepengegrunnlaget er arbeidsvederlag utbetalt i opptjeningsåret. Feriepenger fra året før, og noen andre ytelser, inngår ikke."
+        },
+        {
+          "law": "Ferieloven",
+          "paragraph": "§ 10 tredje ledd",
+          "url": "https://lovdata.no/lov/1988-04-29-21/§10",
+          "note": "For arbeidstaker over 60 år med rett til ekstraferie etter § 5 nr. 2 forhøyes prosentsatsen med 2,3 prosentpoeng — altså 12,5 % der satsen ellers er 10,2 %."
+        },
+        {
+          "law": "Tariffavtale",
+          "paragraph": "Avtalefestet femte ferieuke",
+          "url": null,
+          "note": "Satsen på 12 % som følger den femte ferieuka står i tariffavtalen, ikke i ferieloven — den kom med lønnsoppgjøret i 2000/2001. Står den i kontrakten din, bruker vi den derfra."
         }
       ],
       "verified": "lovtekst"

@@ -47,6 +47,10 @@ const HENTBARE = [
       'jevnlig arbeider mer enn tre timer om natten',
       'sammenhengende midlertidig ansatt i mer enn tre år',
       'Trekk i lønn og feriepenger kan ikke gjøres unntatt',
+      // The three corrected citations rest on this ordering inside § 14-15.
+      'Lønn i penger, herunder feriepenger og annen godtgjøring i penger, skal utbetales',
+      'Trekk i lønn eller feriepenger etter tredje ledd bokstav c, e og f',
+      'skriftlig oppgave over beregningsmåten for lønn',
       'arbeidstaker i ledende stilling',
       'arbeidstakere i særlig uavhengig stilling',
     ],
@@ -55,7 +59,15 @@ const HENTBARE = [
     fil: 'allmenngjoringsloven.txt',
     navn: 'Allmenngjøringsloven',
     url: 'https://www.arbeidstilsynet.no/regelverk/lover/allmenngjoringsloven/',
-    forventet: ['Tariffnemnda', 'allmenngjort'],
+    forventet: [
+      'Tariffnemnda',
+      'allmenngjort',
+      // The rule cited § 6 for the Tariffnemnda power, which is § 5. Pin both headings so a
+      // renumbering is caught rather than quietly making the citation wrong again.
+      '§ 5.  Vedtak om allmenngjøring av tariffavtaler',
+      '§ 6.  Vedtakets innhold',
+      'Tariffnemnda kan treffe vedtak om at en landsomfattende tariffavtale',
+    ],
   },
   {
     fil: 'hr-2021-2532-a.txt',
