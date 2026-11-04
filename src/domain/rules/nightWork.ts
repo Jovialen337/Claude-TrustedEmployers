@@ -112,13 +112,20 @@ export const nightWork: RuleFn = (context: RuleContext): Flag[] => {
       const first = window[0]!;
       const last = window[window.length - 1]!;
       const workedHours = window.reduce((sum, week) => sum + week.workedHours, 0);
-      const workDays = new Set(
-        segments
-          .filter((segment) => segment.date >= first.start && segment.date <= last.end)
-          .map((segment) => segment.date),
-      ).size;
-      if (workDays === 0) continue;
-      const averagePerDay = roundHours(workedHours / workDays);
+      /*
+       * Nevneren er lovens egen, ikke «dager du var på jobb».
+       *
+       * § 10-11 sjette ledd sier at gjennomsnittet regnes over fire uker, og at det ved
+       * beregningen skal tas utgangspunkt i en arbeidsfri periode på 35 timer i løpet av sju
+       * dager. Fire uker er da 28 døgn minus fire ukehviler: 28 − (4 × 35)/24 ≈ 22,17
+       * perioder. Delt på antall dager med vakt i stedet ble snittet kunstig høyt — en som
+       * jobbet fire lange netter i måneden kunne få melding om brudd på en regel om
+       * gjennomsnittlig arbeidstid, uten å være i nærheten av grensen.
+       */
+      const restHoursExcluded = numberParam(context.rule, 'weekly_rest_hours_excluded', 35);
+      const periods = window.length * 7 - (window.length * restHoursExcluded) / 24;
+      if (periods <= 0) continue;
+      const averagePerDay = roundHours(workedHours / periods);
       if (averagePerDay <= maxAverage) continue;
 
       flags.push(
@@ -133,12 +140,14 @@ export const nightWork: RuleFn = (context: RuleContext): Flag[] => {
             `Som nattarbeidstaker skal den alminnelige arbeidstiden din i gjennomsnitt ikke overstige ` +
             `${formatHours(maxAverage)} i løpet av 24 timer, målt over ${averagingWeeks} uker. Fra ` +
             `${first.label.toLowerCase()} til ${last.label.toLowerCase()} er snittet ` +
-            `${formatHours(averagePerDay)} per dag du var på jobb. Vi måler per arbeidsdag, ikke per ` +
-            `kalenderdøgn, så dette er et signal om å se nærmere på turnusen — ikke en ferdig konklusjon.`,
+            `${formatHours(averagePerDay)} per døgn. Loven sier at beregningen skal ta ` +
+            `utgangspunkt i en arbeidsfri periode på ${formatHours(restHoursExcluded)} i løpet av ` +
+            `sju dager, så vi deler på ${formatHours(roundHours(periods))} og ikke på alle ` +
+            `${window.length * 7} døgnene.`,
           evidence: [
             ev('Timer i perioden', formatHours(roundHours(workedHours))),
-            ev('Dager på jobb', String(workDays)),
-            ev('Snitt per arbeidsdag', formatHours(averagePerDay)),
+            ev('Perioder det deles på', `${formatHours(roundHours(periods))} (${window.length * 7} døgn − ${window.length} ukehviler à ${formatHours(restHoursExcluded)})`),
+            ev('Snitt per døgn', formatHours(averagePerDay)),
             ev('Lovens grense', formatHours(maxAverage)),
           ],
           amountOre: null,

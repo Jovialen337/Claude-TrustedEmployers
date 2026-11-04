@@ -272,3 +272,39 @@ describe('fast månedslønn', () => {
     expect(result.totals.estimatedOwedOre).toBe(0);
   });
 });
+
+describe('umulige data gir beskjed, ikke tall', () => {
+  it('stopper på en vakt som starter og slutter på samme klokkeslett', () => {
+    const result = check({
+      shifts: [shift('2026-08-03', '08:00', '08:00')],
+      payslips: [payslip('2026-08-01', '2026-08-31', [ordinaryLine(0)])],
+    });
+    expect(result.blockers.join(' ')).toContain('starter og slutter');
+    expect(result.flags).toHaveLength(0);
+  });
+
+  it('stopper på en lønnsperiode som slutter før den begynner', () => {
+    const result = check({
+      shifts: [shift('2026-08-03', '08:00', '16:00')],
+      payslips: [payslip('2026-08-31', '2026-08-01', [ordinaryLine(8)])],
+    });
+    expect(result.blockers.join(' ')).toContain('slutter før den begynner');
+    expect(result.flags).toHaveLength(0);
+  });
+
+  it('stopper på et feiltastet årstall i stedet for å finne på hundrevis av tomme uker', () => {
+    const result = check({
+      shifts: [shift('2026-08-03', '08:00', '16:00'), shift('2006-08-03', '08:00', '16:00')],
+      payslips: [payslip('2026-08-01', '2026-08-31', [ordinaryLine(8)])],
+    });
+    expect(result.blockers.join(' ')).toContain('elleve år');
+    expect(result.flags).toHaveLength(0);
+    expect(result.totals.estimatedOwedOre).toBe(0);
+  });
+
+  it('lar manglende data være en myk beskjed — sjekken kjører videre', () => {
+    const result = check({ shifts: [shift('2026-08-03', '08:00', '16:00')], payslips: [] });
+    expect(result.blockers.join(' ')).toContain('mangler lønnsslipper');
+    expect(result.flags.length).toBeGreaterThan(0);
+  });
+});

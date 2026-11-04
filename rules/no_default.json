@@ -184,7 +184,8 @@
         "regular_night_shifts": 3,
         "max_average_hours_per_24h": 8,
         "averaging_weeks": 4,
-        "new_period_after_rest_hours": 11
+        "new_period_after_rest_hours": 11,
+        "weekly_rest_hours_excluded": 35
       },
       "sources": [
         {

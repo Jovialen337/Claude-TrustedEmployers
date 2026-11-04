@@ -5,7 +5,15 @@
  * adds up the money. Pure and synchronous: given the same workspace it always produces the
  * same result, which is what lets the demo be asserted to the øre in a unit test.
  */
-import { effectiveShifts, monthBuckets, payslipSummary, plannedShifts, segmentsOf, weekBuckets } from './aggregate';
+import {
+  effectiveShifts,
+  monthBuckets,
+  payslipSummary,
+  plannedShifts,
+  segmentsOf,
+  spanTooLong,
+  weekBuckets,
+} from './aggregate';
 import { applyPaidBreak, contractedHoursPerWeek, effectiveHourlyRateOre } from './derive';
 import { applyOverrides, DEFAULT_RULESET } from './ruleset';
 import { actualHoursVsContract } from './rules/actualHours';
@@ -130,6 +138,66 @@ export function runCheck(workspace: Workspace, options: RunCheckOptions = {}): C
   }
 
   const dataRange = dataRangeOf(workspace);
+
+  /*
+   * Umulige data skal stoppe sjekken, ikke bli til tall.
+   *
+   * Alle fire kommer av tastefeil, og alle fire så ut som funn før: en vakt fra 08:00 til
+   * 08:00 ble til 24 timer og brøt § 10-6; en dato skrevet med feil årstall ga et spenn på
+   * flere tiår, hundrevis av oppdiktede tomme uker og et sekssifret krav; en lønnsperiode
+   * med sluttdato før startdato ga en periode uten timer, og dermed «ingenting er betalt».
+   * Et verktøy som sier «dette kan ikke stemme» er til å stole på. Ett som regner videre på
+   * det er det ikke.
+   *
+   * Dette er en annen slags blokker enn «vi mangler lønnsslipper». Manglende data er mykt:
+   * sjekken kjører på det den har, og sier hva mer den trenger. Umulige data er harde —
+   * de stopper sjekken, for alt den da regner ut er galt.
+   */
+  const impossible: string[] = [];
+  for (const shift of workspace.shifts) {
+    if (shift.start === shift.end) {
+      impossible.push(
+        `Vakta ${shift.date} starter og slutter ${shift.start}. Er den på 24 timer, eller er ` +
+          `et av klokkeslettene feil? Rett den, så kan vi regne.`,
+      );
+    }
+  }
+  for (const segment of segmentsOf(workspace.shifts)) {
+    if (segment.grossMinutes > 24.01 * 60) {
+      impossible.push(
+        `Vi finner mer enn 24 timer på ${segment.date}. Det er mer enn døgnet har, så noe i ` +
+          `vaktene for den dagen må være feil.`,
+      );
+    }
+  }
+  for (const payslip of workspace.payslips) {
+    if (payslip.periodEnd < payslip.periodStart) {
+      impossible.push(
+        `Lønnsslippen for ${payslip.periodStart} – ${payslip.periodEnd} slutter før den ` +
+          `begynner. Bytt om datoene, så kan vi sammenligne.`,
+      );
+    }
+  }
+  if (dataRange && spanTooLong(dataRange)) {
+    impossible.push(
+      `Datoene spenner fra ${dataRange.start} til ${dataRange.end} — mer enn elleve år. Det ` +
+        `er nesten alltid et årstall som er feiltastet. Rett det, så slipper du et regnestykke ` +
+        `som ikke stemmer.`,
+    );
+  }
+  if (impossible.length > 0) {
+    return {
+      generatedAt: now,
+      ruleSet: { id: ruleSet.id, version: ruleSet.version, name: ruleSet.name },
+      dataRange,
+      flags: [],
+      totals: emptyTotals(contractedHoursPerWeek(contract)),
+      timeline: [],
+      blockers: impossible,
+      hourlyRateOre: effectiveHourlyRateOre(contract),
+    };
+  }
+
   // Hours are counted from these: identical to the stored shifts unless the contract says
   // breaks are paid, in which case the break is working time.
   const workTimeShifts = applyPaidBreak(contract, workspace.shifts);

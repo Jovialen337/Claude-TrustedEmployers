@@ -48,7 +48,16 @@ export const temporaryEmployment: RuleFn = (context: RuleContext): Flag[] => {
   const servedDays = daysBetween(contract.startDate, range.end);
   const servedYears = servedDays / 365.25;
 
-  if (servedYears >= yearsToPermanent) {
+  /*
+   * «Mer enn tre år» er tre kalenderår, ikke 1 095 dager. Regnet som dager gikk grensen i
+   * gjennomsnittsår, og en ansettelse fra 1. mars 2023 ble regnet som over tre år allerede
+   * 25. februar 2026 — noen dager for tidlig, i en melding som sier at du er fast ansatt.
+   * Datoen skal være den samme dagen tre år etter.
+   */
+  const [startYear, startMonth, startDay] = contract.startDate.split('-');
+  const anniversary = `${Number(startYear) + yearsToPermanent}-${startMonth}-${startDay}`;
+
+  if (range.end > anniversary) {
     flags.push(
       buildFlag(context, {
         key: 'treaarsregelen',

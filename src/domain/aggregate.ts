@@ -11,6 +11,7 @@ import type { DateStr, Payslip, PayslipCategory, Shift, Supplement } from './sch
 import { OVERTIME_CATEGORIES, WORK_HOUR_CATEGORIES } from './schemas';
 import {
   addDays,
+  daysBetween,
   isoWeek,
   isoWeekEnd,
   isoWeekKey,
@@ -130,6 +131,18 @@ export interface Bucket {
   dates: DateStr[];
 }
 
+/**
+ * Hvor mange uker eller måneder én sjekk kan dekke. Elleve år er langt mer enn noen trenger å
+ * sammenligne mot lønnsslipper, og et spenn lengre enn det betyr at en dato er feil — ikke at
+ * noen har et tiår med vakter. `spanTooLong` gjør det til noe brukeren kan rette.
+ */
+export const MAX_BUCKETS = 600;
+
+/** Sant når dataområdet er så langt at en dato må være feiltastet. */
+export function spanTooLong(span: { start: DateStr; end: DateStr }): boolean {
+  return daysBetween(span.start, span.end) > 366 * 11;
+}
+
 function bucketize(
   shifts: readonly Shift[],
   keyOf: (date: DateStr) => string,
@@ -140,16 +153,53 @@ function bucketize(
   const planned = segmentsOf(plannedShifts(shifts));
   const effective = segmentsOf(effectiveShifts(shifts));
 
+  /*
+   * `keyOf` for en uke koster rundt 1,5 µs — den lager tre Date-objekter og padder tekst — og
+   * den ble kalt én gang per (bøtte, segment). Tre år er ~190 000 kall, og runCheck brukte
+   * 90 % av tiden her; fem år tok over ett sekund, som på en telefon er en frossen side, for
+   * sjekken kjører på hovedtråden. Å regne ut nøkkelen én gang per dato og gruppere på den
+   * gir de samme bøttene på lineær tid.
+   */
+  const keyCache = new Map<DateStr, string>();
+  const keyFor = (date: DateStr): string => {
+    let key = keyCache.get(date);
+    if (key === undefined) {
+      key = keyOf(date);
+      keyCache.set(date, key);
+    }
+    return key;
+  };
+
+  const plannedByKey = new Map<string, SegmentWithShift[]>();
+  const effectiveByKey = new Map<string, SegmentWithShift[]>();
+  const push = (into: Map<string, SegmentWithShift[]>, key: string, segment: SegmentWithShift) => {
+    const list = into.get(key);
+    if (list === undefined) into.set(key, [segment]);
+    else list.push(segment);
+  };
+
   const keys = new Set<string>();
-  for (const segment of [...planned, ...effective]) keys.add(keyOf(segment.date));
+  for (const segment of planned) {
+    const key = keyFor(segment.date);
+    keys.add(key);
+    push(plannedByKey, key, segment);
+  }
+  for (const segment of effective) {
+    const key = keyFor(segment.date);
+    keys.add(key);
+    push(effectiveByKey, key, segment);
+  }
 
   // Weeks and months with no shifts at all still get a bucket, as long as they lie inside
   // the span we have data for. A week where you were given no hours is exactly the kind of
   // week a worker needs to see.
   if (span) {
-    let key = keyOf(span.start);
-    const lastKey = keyOf(span.end);
-    for (let guard = 0; guard < 600; guard += 1) {
+    let key = keyFor(span.start);
+    const lastKey = keyFor(span.end);
+    // Vakta er et sikkerhetsnett mot en `next` som aldri når `lastKey`. Den stoppet stille på
+    // 600, og gjorde et feiltastet årstall om til 600 oppdiktede tomme uker og et sekssifret
+    // «timer du aldri fikk»-tall; `spanTooLong` gjør det til en blokker i stedet.
+    for (let guard = 0; guard < MAX_BUCKETS; guard += 1) {
       keys.add(key);
       if (key === lastKey) break;
       key = next(key);
@@ -160,8 +210,8 @@ function bucketize(
     .sort()
     .map((key) => {
       const range = rangeOf(key);
-      const inPlanned = planned.filter((s) => keyOf(s.date) === key);
-      const inEffective = effective.filter((s) => keyOf(s.date) === key);
+      const inPlanned = plannedByKey.get(key) ?? [];
+      const inEffective = effectiveByKey.get(key) ?? [];
       return {
         key,
         label: range.label,
