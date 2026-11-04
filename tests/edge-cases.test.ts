@@ -66,6 +66,62 @@ describe('2. vakt over lønnsperiodegrensen', () => {
     expect(flagsFor(result, 'scheduled_vs_paid').filter((f) => f.id.includes('timer'))).toHaveLength(0);
   });
 
+  it('krever ingenting når hele nattevakta er betalt på lønnsslippen den startet i', () => {
+    /*
+     * Slik lønn faktisk kjøres de fleste steder: vakta 30. september 22:00–06:00 er betalt
+     * med alle 8 timene på septemberslippen. Før rettelsen la appen 6 av timene i oktober,
+     * fant ingen betaling der, og meldte «6,0 t jobbet, men ikke betalt» — sannsynlig feil,
+     * hver måned, for alle som jobber natt.
+     */
+    const result = check({
+      shifts: [shift('2026-09-30', '22:00', '06:00')],
+      payslips: [
+        payslip('2026-09-01', '2026-09-30', [ordinaryLine(8)]),
+        payslip('2026-10-01', '2026-10-31', []),
+      ],
+    });
+    expect(flagsFor(result, 'scheduled_vs_paid').filter((f) => f.id.includes('timer'))).toHaveLength(0);
+    expect(result.totals.estimatedOwedOre).toBe(0);
+  });
+
+  it('krever fortsatt begge delene når ingenting er betalt', () => {
+    const result = check({
+      shifts: [shift('2026-09-30', '22:00', '06:00')],
+      payslips: [
+        payslip('2026-09-01', '2026-09-30', []),
+        payslip('2026-10-01', '2026-10-31', []),
+      ],
+    });
+    const flags = flagsFor(result, 'scheduled_vs_paid').filter((f) => f.id.includes('timer'));
+    // Sortert med det største kravet først.
+    expect(flags.map((f) => f.calculation!.expression)).toEqual([
+      '6,0 t × 198,50 kr = 1 191,00 kr',
+      '2,0 t × 198,50 kr = 397,00 kr',
+    ]);
+  });
+
+  it('gir ikke nattillegg to ganger for en vakt over periodegrensen', () => {
+    // Nattillegg 21:00–06:00, 40,00 kr/t. 22:00–06:00 = 8 t × 40,00 kr = 320,00 kr, betalt i
+    // sin helhet i september. Oktober skal ikke kreve de 6 timene en gang til.
+    const natt = supplement({
+      id: 'natt',
+      kind: 'natt',
+      label: 'Nattillegg',
+      fromTime: '21:00',
+      toTime: '06:00',
+      rate: { kind: 'per_hour_ore', value: 4000 },
+    });
+    const result = check({
+      contract: contract({ supplements: [natt] }),
+      shifts: [shift('2026-09-30', '22:00', '06:00')],
+      payslips: [
+        payslip('2026-09-01', '2026-09-30', [ordinaryLine(8), line('nattillegg', 8, 4000, 32000)]),
+        payslip('2026-10-01', '2026-10-31', []),
+      ],
+    });
+    expect(flagsFor(result, 'supplements')).toHaveLength(0);
+  });
+
   it('flagger 2,0 t × 198,50 kr = 397,00 kr når augustdelen ikke er betalt', () => {
     const result = check({
       shifts: [shift('2026-08-31', '22:00', '06:00')],
@@ -194,5 +250,25 @@ describe('6. uke på 90 % av kontrakten', () => {
     expect(flag.evidence.find((e) => e.label === 'Avtalt arbeidstid')!.value).toBe('20,0 t (Avtalt arbeidstid står direkte i kontrakten.)');
     expect(flag.evidence.find((e) => e.label === 'Timer som gjelder')!.value).toBe('18,0 t');
     expect(flag.evidence.find((e) => e.label === 'Differanse')!.value).toBe('2,0 t');
+  });
+});
+
+describe('fast månedslønn', () => {
+  it('krever ikke hele måneden tilbake når lønna ikke er et timetall', () => {
+    /*
+     * En fast månedslønn betaler for måneden, ikke for et antall timer, så lønnsslippen har
+     * ingen timer å sammenligne med. Lest som «ingen timer betalt» ga 30 000 kr utbetalt et
+     * krav på 22 153,80 kr, merket sannsynlig feil. Nå sier appen heller at sammenligningen
+     * ikke lar seg gjøre.
+     */
+    const result = check({
+      contract: contract({ wage: { kind: 'monthly', amountOre: 3_000_000 } }),
+      shifts: [shift('2026-08-03', '08:00', '16:00'), shift('2026-08-04', '08:00', '16:00')],
+      payslips: [payslip('2026-08-01', '2026-08-31', [line('fastlonn', null, null, 3_000_000, 'Fastlønn')])],
+    });
+    const flags = flagsFor(result, 'scheduled_vs_paid');
+    expect(flags.filter((f) => f.id.includes('timer'))).toHaveLength(0);
+    expect(flags.map((f) => f.severity)).toContain('til_info');
+    expect(result.totals.estimatedOwedOre).toBe(0);
   });
 });

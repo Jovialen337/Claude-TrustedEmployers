@@ -5,7 +5,7 @@
  * tariff agreement, so this rule uses only the windows and rates the user has entered from
  * their own papers. With nothing entered, it says so instead of guessing a rate.
  */
-import { categoryAmountOre, supplementHours } from '../aggregate';
+import { categoryAmountOre, explainedByPreviousPeriod, supplementHours } from '../aggregate';
 import { formatHours, formatKr, formatPercent, hoursTimesRate, mulOre, roundHours } from '../money';
 import {
   CATEGORY_LABELS,
@@ -79,11 +79,22 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
     byCategory.set(category, [...(byCategory.get(category) ?? []), supplement]);
   }
 
+  /**
+   * Per category: what the previous payslip paid in tillegg beyond what its own hours call
+   * for. A night shift crossing the period boundary is usually paid in full on that payslip,
+   * so the hours after midnight must not be claimed again here — the same reasoning as for
+   * the hours themselves, see `carryInHours`. `context.summaries` is sorted by period start.
+   */
+  let unexplainedPaidBefore = new Map<PayslipCategory, number>();
+
   for (const summary of context.summaries) {
     const { periodStart, periodEnd } = summary.payslip;
+    const unexplainedPaidAfter = new Map<PayslipCategory, number>();
 
     for (const [category, group] of byCategory) {
       let expected = 0;
+      /** Of `expected`, the part belonging to a shift that started before this period. */
+      let expectedCrossing = 0;
       const rows = [];
       /** How the expected amount was arrived at, kept for the calculation line. */
       const workings: string[] = [];
@@ -93,6 +104,18 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
         if (hours <= 0) continue;
         const ore = expectedOre(supplement, hours, context.hourlyRateOre);
         expected += ore;
+        const crossingHours = roundHours(
+          supplementHours(
+            context.effective,
+            supplement,
+            periodStart,
+            periodEnd,
+            (segment) => segment.shift.date < periodStart,
+          ),
+        );
+        if (crossingHours > 0) {
+          expectedCrossing += expectedOre(supplement, crossingHours, context.hourlyRateOre);
+        }
         rows.push(
           ev(
             supplement.label,
@@ -106,9 +129,18 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
         );
       }
 
-      if (expected <= 0) continue;
       const paid = categoryAmountOre(summary, category);
-      const missing = expected - paid;
+      unexplainedPaidAfter.set(category, Math.max(0, paid - expected));
+      if (expected <= 0) continue;
+
+      const carriedIn = Math.round(
+        explainedByPreviousPeriod(
+          expected - paid,
+          expectedCrossing,
+          unexplainedPaidBefore.get(category) ?? 0,
+        ),
+      );
+      const missing = expected - paid - carriedIn;
       if (missing <= tolerance) continue;
 
       flags.push(
@@ -128,6 +160,9 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
             ...rows,
             ev('Skulle hatt', formatKr(expected)),
             ev('På lønnsslippen', formatKr(paid)),
+            ...(carriedIn > 0
+              ? [ev('Betalt på forrige lønnsslipp', `${formatKr(carriedIn)} for vakt som startet før perioden`)]
+              : []),
             ev('Differanse', formatKr(missing)),
             ev('Kilde til satsen', group.map((s) => s.source).join('; ')),
             ev('Hvor satsen kommer fra', 'Kontrakten eller tariffavtalen din — ikke arbeidsmiljøloven'),
@@ -137,7 +172,9 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
             // the per-supplement lines are in the evidence just above.
             expression:
               (workings.length === 1 ? `${workings[0]} = ${formatKr(expected)}` : formatKr(expected)) +
-              ` − ${formatKr(paid)} betalt = ${formatKr(missing)}`,
+              ` − ${formatKr(paid)} betalt` +
+              (carriedIn > 0 ? ` − ${formatKr(carriedIn)} betalt forrige periode` : '') +
+              ` = ${formatKr(missing)}`,
             resultOre: missing,
           },
           amountOre: missing,
@@ -145,6 +182,8 @@ export const supplements: RuleFn = (context: RuleContext): Flag[] => {
         }),
       );
     }
+
+    unexplainedPaidBefore = unexplainedPaidAfter;
   }
 
   return flags;

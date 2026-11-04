@@ -74,6 +74,50 @@ export function hoursInRange(
   return minutesInRange(segments, start, end) / 60;
 }
 
+/**
+ * Of the hours inside a period, the ones belonging to a shift that *started* before it.
+ *
+ * A night shift from 30 September 22:00 to 1 October 06:00 falls on two calendar days, and
+ * every working-time rule needs it that way: § 10-8's rest periods and § 10-6's ceilings are
+ * about the døgn and the week the hours actually lay in. Payroll does not have to follow the
+ * calendar. Many employers pay such a shift in full on the payslip for the period it began
+ * in — one shift, one rate, one period — and comparing period by period then reported the
+ * 6 hours after midnight as unpaid in October: a false "sannsynlig feil" every month for
+ * everyone working nights, at the highest severity the tool has.
+ *
+ * Both conventions are in use, and a payslip does not say which one it follows, so the rules
+ * do not pick one. The hours stay on their own calendar days, and a shortfall in one period
+ * may be explained by hours the period before it paid for but cannot account for itself —
+ * capped at what actually crossed the boundary. An employer who really does split the shift
+ * across two payslips has no such surplus, so a genuine shortfall is still claimed in full.
+ */
+export function carryInHours(
+  segments: readonly SegmentWithShift[],
+  start: DateStr,
+  end: DateStr,
+): number {
+  return (
+    segments
+      .filter((segment) => isWithin(segment.date, start, end) && segment.shift.date < start)
+      .reduce((sum, segment) => sum + segment.workedMinutes, 0) / 60
+  );
+}
+
+/**
+ * How much of a period's shortfall the period before it already paid for.
+ *
+ * `surplusBefore` is what the earlier payslip paid beyond its own hours, `crossing` what the
+ * boundary-crossing shift contributed to this period. Nothing beyond the smaller of the two
+ * can be explained that way — and nothing beyond the shortfall itself is of any use.
+ */
+export function explainedByPreviousPeriod(
+  shortfall: number,
+  crossing: number,
+  surplusBefore: number,
+): number {
+  return Math.max(0, Math.min(shortfall, crossing, surplusBefore));
+}
+
 /* ------------------------------------------------------------------ buckets */
 
 export interface Bucket {
@@ -237,11 +281,19 @@ export function supplementHours(
   supplement: Supplement,
   start: DateStr,
   end: DateStr,
+  /**
+   * An extra condition on the segments to count — e.g. only the ones carried in from a shift
+   * that started before `start`, see `carryInHours`. Whether the supplement applies at all is
+   * still read off the segment's own calendar day below: 00:00–06:00 on 1 October is
+   * night-time on 1 October whatever payslip pays for it.
+   */
+  restrict: (segment: SegmentWithShift) => boolean = () => true,
 ): number {
   let minutes = 0;
 
   for (const segment of segments) {
     if (!isWithin(segment.date, start, end)) continue;
+    if (!restrict(segment)) continue;
     if (supplement.kind === 'helligdag' && !isHoliday(segment.date)) continue;
     if (supplement.weekdays !== null) {
       if (!supplement.weekdays.includes(weekdayIso(segment.date))) continue;
