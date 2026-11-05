@@ -1,0 +1,20 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local data — the user's own contract, shifts and payslips. Never committed.
+.data/
+
+# Secrets
+.env
+.env.local
+.env*.local
+
+# Generated output
+*.pdf
+!docs/**/*.pdf
+coverage/
+.DS_Store
