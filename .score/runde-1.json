@@ -1,0 +1,372 @@
+{
+  "runde": 1,
+  "tidspunkt": "2026-11-05T16:52:28.721Z",
+  "commit": "35b2bba",
+  "dom": "GODKJENT",
+  "total": 100,
+  "lavesteDimensjon": 100,
+  "framgang": null,
+  "lukketSidenForrige": [],
+  "konvergens": "første runde",
+  "dimensjoner": [
+    {
+      "id": "D1",
+      "navn": "Juridisk treffsikkerhet",
+      "vekt": 0.3,
+      "deler": [
+        [
+          "Regler kontrollert mot lovteksten",
+          40,
+          40
+        ],
+        [
+          "Hver regel har lov, paragraf og lenke",
+          20,
+          20
+        ],
+        [
+          "Lovtekstkorpuset stemmer med reglene",
+          20,
+          20
+        ],
+        [
+          "Hver regel er dekket av en test",
+          20,
+          20
+        ]
+      ],
+      "rå": 100,
+      "fradrag": 0,
+      "poeng": 100
+    },
+    {
+      "id": "D2",
+      "navn": "Determinisme og bevis",
+      "vekt": 0.2,
+      "deler": [
+        [
+          "Samme data gir samme svar",
+          40,
+          40
+        ],
+        [
+          "Ingen funn uten bevis",
+          20,
+          20
+        ],
+        [
+          "Ingen funn uten lovhenvisning",
+          20,
+          20
+        ],
+        [
+          "Reglene er rene funksjoner",
+          20,
+          20
+        ]
+      ],
+      "rå": 100,
+      "fradrag": 0,
+      "poeng": 100
+    },
+    {
+      "id": "D3",
+      "navn": "Korrekthet og testdekning",
+      "vekt": 0.2,
+      "deler": [
+        [
+          "Alle tester grønne",
+          50,
+          50
+        ],
+        [
+          "Typecheck rent",
+          20,
+          20
+        ],
+        [
+          "Smoke mot appen",
+          15,
+          15
+        ],
+        [
+          "Smoke mot offline-fila",
+          15,
+          15
+        ]
+      ],
+      "rå": 100,
+      "fradrag": 0,
+      "poeng": 100
+    },
+    {
+      "id": "D4",
+      "navn": "Personvern og sikkerhet",
+      "vekt": 0.15,
+      "deler": [
+        [
+          "Ingen personopplysninger utenfor den godkjente listen",
+          20,
+          20
+        ],
+        [
+          "Ingen foreldede unntak på listen",
+          5,
+          5
+        ],
+        [
+          "Ingen API-nøkkel i repoet",
+          15,
+          15
+        ],
+        [
+          "Teksten kan ikke nå Claude umaskert",
+          20,
+          20
+        ],
+        [
+          "Virker uten API-nøkkel, og det er testet",
+          20,
+          20
+        ],
+        [
+          "Ingen .env sporet i git",
+          20,
+          20
+        ]
+      ],
+      "rå": 100,
+      "fradrag": 0,
+      "poeng": 100
+    },
+    {
+      "id": "D5",
+      "navn": "Ytelse og robusthet",
+      "vekt": 0.1,
+      "deler": [
+        [
+          "Fem år med vakter under 400 ms",
+          40,
+          40
+        ],
+        [
+          "Skalerer nær lineært",
+          30,
+          30
+        ],
+        [
+          "Offline-fila under 4 MiB",
+          30,
+          30
+        ]
+      ],
+      "rå": 100,
+      "fradrag": 0,
+      "poeng": 100
+    },
+    {
+      "id": "D6",
+      "navn": "Språk og forståelighet",
+      "vekt": 0.05,
+      "deler": [
+        [
+          "Hver regel forklart i klartekst",
+          50,
+          50
+        ],
+        [
+          "Ingen funn med en melding som ikke forklarer noe",
+          50,
+          50
+        ]
+      ],
+      "rå": 100,
+      "fradrag": 0,
+      "poeng": 100
+    }
+  ],
+  "veto": [],
+  "funn": [],
+  "fakta": {
+    "regler": {
+      "antall": 16,
+      "verifisert": 16,
+      "verifisertFordeling": {
+        "lovtekst": 16
+      },
+      "medFullKilde": 16,
+      "medForklaring": 16,
+      "utenTest": []
+    },
+    "lovtekst": {
+      "ok": true,
+      "avvik": 0,
+      "filer": [
+        {
+          "fil": "allmenngjoringsloven.txt",
+          "tegn": 19443
+        },
+        {
+          "fil": "arbeidsmiljoloven.txt",
+          "tegn": 219877
+        },
+        {
+          "fil": "ferieloven.txt",
+          "tegn": 10068
+        },
+        {
+          "fil": "hr-2021-2532-a.txt",
+          "tegn": 2430
+        }
+      ]
+    },
+    "typecheck": {
+      "ok": true
+    },
+    "tester": {
+      "ok": true,
+      "feilet": 0,
+      "bestatt": 306,
+      "filer": "21"
+    },
+    "renhet": {
+      "filer": 24,
+      "brudd": [],
+      "klokkensInnganger": [
+        "src/domain/engine.ts: const now = options.now ?? new Date().toISOString();",
+        "src/domain/schemas.ts: export function emptyWorkspace(now = new Date().toISOString()): Workspace {"
+      ]
+    },
+    "personvern": {
+      "utenforListen": [],
+      "foreldedeUnntak": [],
+      "nokkelIRepoet": [],
+      "funnetI": [
+        "DECISIONS.md",
+        "scripts/smoke-offline.mjs",
+        "src/privacy/mask.ts",
+        "tests/demo.test.ts",
+        "tests/extraction.test.ts",
+        "tests/import-schedule.test.ts",
+        "tests/mask.test.ts"
+      ],
+      "envSporet": false,
+      "testerUtenNokkel": true
+    },
+    "maskering": {
+      "maskedFirst": true,
+      "omveier": []
+    },
+    "offline": {
+      "finnes": true,
+      "kib": 3269,
+      "smoke": {
+        "ok": true,
+        "bestatt": 44,
+        "feilet": 0
+      }
+    },
+    "smoke": {
+      "ok": true,
+      "bestatt": 26,
+      "feilet": 0
+    },
+    "probe": {
+      "determinisme": {
+        "likeKjoringer": true,
+        "hash": "ef861f04ab3ac3dc"
+      },
+      "demo": {
+        "flaggTotalt": 22,
+        "blockers": [],
+        "owedOre": 643638,
+        "bySeverity": {
+          "sannsynlig_feil": 6,
+          "bor_sjekkes": 6,
+          "til_info": 10
+        },
+        "utenBevis": [],
+        "utenKilde": [],
+        "sannsynligFeil": [
+          {
+            "ruleId": "supplements",
+            "id": "supplements:demo-slipp-2026-05:helligdagstillegg",
+            "severity": "sannsynlig_feil",
+            "amountOre": 198500,
+            "hasEvidence": true,
+            "hasSource": true,
+            "messageLength": 301
+          },
+          {
+            "ruleId": "supplements",
+            "id": "supplements:demo-slipp-2026-06:kveldstillegg",
+            "severity": "sannsynlig_feil",
+            "amountOre": 182500,
+            "hasEvidence": true,
+            "hasSource": true,
+            "messageLength": 297
+          },
+          {
+            "ruleId": "scheduled_vs_paid",
+            "id": "scheduled_vs_paid:sats:demo-slipp-2026-05:demo-linje-2026-05-1",
+            "severity": "sannsynlig_feil",
+            "amountOre": 148500,
+            "hasEvidence": true,
+            "hasSource": true,
+            "messageLength": 253
+          },
+          {
+            "ruleId": "scheduled_vs_paid",
+            "id": "scheduled_vs_paid:timer:demo-slipp-2026-07",
+            "severity": "sannsynlig_feil",
+            "amountOre": 49625,
+            "hasEvidence": true,
+            "hasSource": true,
+            "messageLength": 284
+          },
+          {
+            "ruleId": "overtime",
+            "id": "overtime:demo-slipp-2026-06",
+            "severity": "sannsynlig_feil",
+            "amountOre": 44663,
+            "hasEvidence": true,
+            "hasSource": true,
+            "messageLength": 322
+          },
+          {
+            "ruleId": "overtime",
+            "id": "overtime:demo-slipp-2026-07",
+            "severity": "sannsynlig_feil",
+            "amountOre": 19850,
+            "hasEvidence": true,
+            "hasSource": true,
+            "messageLength": 322
+          }
+        ],
+        "korteMeldinger": []
+      },
+      "ytelse": [
+        {
+          "weeks": 52,
+          "shifts": 260,
+          "ms": 52
+        },
+        {
+          "weeks": 104,
+          "shifts": 520,
+          "ms": 76
+        },
+        {
+          "weeks": 156,
+          "shifts": 780,
+          "ms": 110
+        },
+        {
+          "weeks": 260,
+          "shifts": 1300,
+          "ms": 229
+        }
+      ]
+    }
+  }
+}

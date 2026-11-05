@@ -22,6 +22,12 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'docs', 'lovtekst');
 const write = process.argv.includes('--skriv');
+/**
+ * `--lokalt` hopper over nettet og kontrollerer bare at tekstene som ligger i repoet fortsatt
+ * inneholder alle formuleringene reglene bygger på. Det er den delen poengsummen bruker, og
+ * den skal kunne kjøres uten nett — ellers måler den nettverket, ikke koden.
+ */
+const localOnly = process.argv.includes('--lokalt');
 
 const UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36';
@@ -128,11 +134,23 @@ function tilTekst(html) {
 let avvik = 0;
 let endret = 0;
 
-console.log('Henter lovtekst\n');
+console.log(localOnly ? 'Kontrollerer lagret lovtekst\n' : 'Henter lovtekst\n');
 
 for (const kilde of HENTBARE) {
   const målfil = path.join(dir, kilde.fil);
   const gammel = await readFile(målfil, 'utf8').catch(() => null);
+
+  if (localOnly) {
+    const mangler = harAlle(gammel ?? '', kilde.forventet);
+    if (mangler.length > 0) {
+      console.log(`  AVVIK ${kilde.navn}: den lagrede teksten mangler ${mangler.length} formulering(er)`);
+      for (const bit of mangler) console.log(`          mangler: «${bit}»`);
+      avvik += 1;
+    } else {
+      console.log(`  ok    ${kilde.navn}: den lagrede teksten har alle ${kilde.forventet.length} formuleringene`);
+    }
+    continue;
+  }
 
   let svar;
   try {

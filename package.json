@@ -14,7 +14,8 @@
     "smoke": "node scripts/smoke.mjs",
     "build:offline": "node scripts/build-offline.mjs",
     "smoke:offline": "node scripts/smoke-offline.mjs",
-    "hent-lovtekst": "node scripts/hent-lovtekst.mjs"
+    "hent-lovtekst": "node scripts/hent-lovtekst.mjs",
+    "score": "node scripts/score.mjs"
   },
   "engines": {
     "node": ">=20"

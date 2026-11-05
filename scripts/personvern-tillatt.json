@@ -1,0 +1,25 @@
+{
+  "_": [
+    "Filene som har lov til å inneholde et tall på fødselsnummerets eller kontonummerets form,",
+    "med grunnen. Maskeringen kan ikke testes uten noe å maskere, og formatet må stå et sted.",
+    "Alt som ikke står her, og som likevel har mønsteret, er et funn: «npm run score» melder det,",
+    "og skal gjøre det, for det er listen som er kontrollen — ikke et søk etter ordet «fiktiv».",
+    "Et nøkkelordsøk kan omgås ved å skrive ordet. En liste må noen føre inn i.",
+    "",
+    "Står noe nytt på listen, skal den som fører det inn ha sett tallet og vite at det er",
+    "oppdiktet. Tallene i bruk i dag er 01019012345 og 1234.56.78901: begge er umulige som",
+    "ekte fødselsnummer og kontonummer, og de står i alle filene nedenfor.",
+    "",
+    "Fjernes en fil, eller slutter den å trenge unntaket, skal linja ut — en gammel linje er en",
+    "kontroll som ikke virker lenger. «npm run score» melder også det."
+  ],
+  "tillatt": {
+    "src/privacy/mask.ts": "Maskereren selv. Den må kjenne formen på et kontonummer for å finne det.",
+    "tests/mask.test.ts": "Prøver maskeringen på et oppdiktet fødselsnummer og kontonummer.",
+    "tests/extraction.test.ts": "Sjekker at teksten som sendes til Claude er maskert først.",
+    "tests/import-schedule.test.ts": "Importerer en oppdiktet vaktplan med et nummer i toppteksten.",
+    "tests/demo.test.ts": "Krever at demodataene ikke inneholder slike tall — formatet står i en kommentar.",
+    "scripts/smoke-offline.mjs": "Kjører maskeringen gjennom den bygde HTML-fila, med de samme oppdiktede tallene.",
+    "DECISIONS.md": "Beskriver hva maskeringen fjerner, med et eksempel."
+  }
+}
