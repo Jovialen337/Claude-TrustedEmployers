@@ -377,6 +377,13 @@ const verdict =
 /* ------------------------------------------------------------------ lagring */
 
 mkdirSync(scoreDir, { recursive: true });
+
+/*
+ * `--rask` hopper over tester og typecheck, så D3 faller til 0 og summen blir meningsløs som
+ * runde. Den skrev likevel en rundefil, og en feilsøkingskjøring ble stående i regnskapet som
+ * «runde 2: 80 poeng, ingen målbar framgang». Den slags er verre enn ingen historikk: den ser
+ * ut som en måling. Rask-kjøringer går til én fil som overskrives, utenfor rundetellingen.
+ */
 const previous = readdirSync(scoreDir)
   .filter((file) => /^runde-\d+\.json$/.test(file))
   .map((file) => Number(/\d+/.exec(file)[0]))
@@ -404,7 +411,8 @@ const convergence =
       : 'ingen målbar framgang';
 
 const record = {
-  runde: roundNumber,
+  runde: quick ? 'rask' : roundNumber,
+  rask: quick ? true : undefined,
   tidspunkt: new Date().toISOString(),
   commit: run('git', ['rev-parse', '--short', 'HEAD']).stdout.trim(),
   dom: verdict,
@@ -418,12 +426,18 @@ const record = {
   funn: findings,
   fakta: facts,
 };
-writeFileSync(path.join(scoreDir, `runde-${roundNumber}.json`), `${JSON.stringify(record, null, 2)}\n`);
+const outFile = quick ? 'rask.json' : `runde-${roundNumber}.json`;
+writeFileSync(path.join(scoreDir, outFile), `${JSON.stringify(record, null, 2)}\n`);
 
 /* ----------------------------------------------------------------- utskrift */
 
 const bar = (value) => '█'.repeat(Math.round(value / 5)).padEnd(20, '·');
-console.log(`\nLønnssjekk — runde ${roundNumber}  (${record.commit})\n`);
+console.log(
+  quick
+    ? `\nLønnssjekk — rask kjøring, ikke en runde  (${record.commit})\n` +
+        `  Tester og typecheck er hoppet over, så D3 og summen gjelder ikke.\n`
+    : `\nLønnssjekk — runde ${roundNumber}  (${record.commit})\n`,
+);
 for (const dimension of dimensions) {
   console.log(
     `  ${dimension.id}  ${dimension.navn.padEnd(30)} ${String(dimension.poeng).padStart(5)} ` +
@@ -435,12 +449,12 @@ for (const dimension of dimensions) {
   }
 }
 console.log(`\n  Sum (vektet): ${total} / 100     laveste dimensjon: ${lowest}`);
-if (improvement !== null) {
+if (improvement !== null && !quick) {
   console.log(
     `  Endring siden runde ${before.runde}: ${improvement >= 0 ? '+' : ''}${improvement}  (${convergence})`,
   );
 }
 if (closed.length > 0) console.log(`  Lukket siden forrige runde: ${closed.join(', ')}`);
 if (vetoes.length > 0) console.log(`  VETO: ${vetoes.map((v) => v.id).join(', ')}`);
-console.log(`\n  Måling: ${verdict}`);
-console.log(`  Dommen settes av evalueringsagenten, som leser .score/runde-${roundNumber}.json\n`);
+console.log(`\n  Måling: ${quick ? 'ikke gyldig — kjør uten --rask' : verdict}`);
+console.log(`  Dommen settes av evalueringsagenten, som leser .score/${outFile}\n`);

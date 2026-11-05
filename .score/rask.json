@@ -1,11 +1,12 @@
 {
-  "runde": 2,
-  "tidspunkt": "2026-11-05T16:56:58.724Z",
-  "commit": "35b2bba",
-  "dom": "NESTEN — TENK OM",
-  "total": 80,
+  "runde": "rask",
+  "rask": true,
+  "tidspunkt": "2026-11-05T16:57:20.003Z",
+  "commit": "5ce3bfc",
+  "dom": "IKKE GODKJENT",
+  "total": 77,
   "lavesteDimensjon": 0,
-  "framgang": -20,
+  "framgang": -23,
   "lukketSidenForrige": [],
   "konvergens": "ingen målbar framgang",
   "dimensjoner": [
@@ -106,7 +107,7 @@
       "deler": [
         [
           "Ingen personopplysninger utenfor den godkjente listen",
-          20,
+          0,
           20
         ],
         [
@@ -135,9 +136,9 @@
           20
         ]
       ],
-      "rå": 100,
+      "rå": 80,
       "fradrag": 0,
-      "poeng": 100
+      "poeng": 80
     },
     {
       "id": "D5",
@@ -239,11 +240,14 @@
       ]
     },
     "personvern": {
-      "utenforListen": [],
+      "utenforListen": [
+        "scripts/personvern-tillatt.json: 11 siffer, kontonummer"
+      ],
       "foreldedeUnntak": [],
       "nokkelIRepoet": [],
       "funnetI": [
         "DECISIONS.md",
+        "scripts/personvern-tillatt.json",
         "scripts/smoke-offline.mjs",
         "src/privacy/mask.ts",
         "tests/demo.test.ts",
@@ -346,22 +350,22 @@
         {
           "weeks": 52,
           "shifts": 260,
-          "ms": 50
+          "ms": 48
         },
         {
           "weeks": 104,
           "shifts": 520,
-          "ms": 79
+          "ms": 55
         },
         {
           "weeks": 156,
           "shifts": 780,
-          "ms": 92
+          "ms": 85
         },
         {
           "weeks": 260,
           "shifts": 1300,
-          "ms": 230
+          "ms": 173
         }
       ]
     }
