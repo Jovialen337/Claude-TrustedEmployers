@@ -48,16 +48,27 @@ function money(kr: number): number {
   return Math.round(kr * 100);
 }
 
-let lineCounter = 0;
 function payslipLine(
   category: PayslipLine['category'],
   label: string,
   hours: number | null,
   rateOre: number | null,
   amountOre: number,
-): PayslipLine {
-  lineCounter += 1;
-  return { id: `demo-linje-${lineCounter}`, category, label, hours, rateOre, amountOre };
+): Omit<PayslipLine, 'id'> {
+  return { category, label, hours, rateOre, amountOre };
+}
+
+/**
+ * Id-er fra måneden og linjas plass på slippen.
+ *
+ * En løpende teller på modulnivå så harmløs ut og var det ikke: den fortsatte å telle mellom
+ * kall, så andre gang demoen ble lastet i samme prosess fikk den samme linja id-en
+ * `demo-linje-9` der den første hadde `demo-linje-1`. Flagg-id-ene bygges på linje-id-en, så
+ * funnene skiftet identitet ved hver lasting — og alt som er nøklet på en flagg-id, som å
+ * huske hvilke funn du har lest, mister da plassen sin uten at noe er endret.
+ */
+function slipLines(month: string, lines: readonly Omit<PayslipLine, 'id'>[]): PayslipLine[] {
+  return lines.map((line, index) => ({ ...line, id: `demo-linje-${month}-${index + 1}` }));
 }
 
 export function demoContract(): Contract {
@@ -128,28 +139,28 @@ function demoPayslips(): Payslip[] {
   /* ---------------------------------------------------------------- mai 2026 */
   // Feil 1: 110 t betalt med 185,00 kr i stedet for 198,50 kr.
   // Feil 2: ingen linje for helligdagstillegg (10 t × 198,50 kr = 1 985,00 kr mangler).
-  const mai: PayslipLine[] = [
+  const mai: PayslipLine[] = slipLines('2026-05', [
     payslipLine('ordinaer', 'Timelønn', 110, money(185), money(110 * 185)),
     payslipLine('kveldstillegg', 'Kveldstillegg', 64, KVELD_ORE_PER_HOUR, money(64 * 25)),
     payslipLine('helgetillegg', 'Helgetillegg', 30, HELG_ORE_PER_HOUR, money(30 * 45)),
-  ];
+  ]);
 
   /* --------------------------------------------------------------- juni 2026 */
   // Feil 3: ingen linje for kveldstillegg (73 t × 25,00 kr = 1 825,00 kr mangler).
-  const juni: PayslipLine[] = [
+  const juni: PayslipLine[] = slipLines('2026-06', [
     payslipLine('ordinaer', 'Timelønn', 121, DEMO_HOURLY_RATE_ORE, money(121 * 198.5)),
     payslipLine('helgetillegg', 'Helgetillegg', 28, HELG_ORE_PER_HOUR, money(28 * 45)),
-  ];
+  ]);
 
   /* --------------------------------------------------------------- juli 2026 */
   // Feil 5: de 2 timene over 9 t onsdag 15. juli er betalt som ordinære timer, uten
   //         overtidstillegg — det finnes ingen overtidslinje.
   // Feil 6: bare 92,0 av 94,5 jobbede timer er betalt.
-  const juli: PayslipLine[] = [
+  const juli: PayslipLine[] = slipLines('2026-07', [
     payslipLine('ordinaer', 'Timelønn', 92, DEMO_HOURLY_RATE_ORE, money(92 * 198.5)),
     payslipLine('kveldstillegg', 'Kveldstillegg', 50, KVELD_ORE_PER_HOUR, money(50 * 25)),
     payslipLine('helgetillegg', 'Helgetillegg', 22.5, HELG_ORE_PER_HOUR, money(22.5 * 45)),
-  ];
+  ]);
 
   const sum = (lines: PayslipLine[]) => lines.reduce((total, line) => total + line.amountOre, 0);
 

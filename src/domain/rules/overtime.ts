@@ -97,6 +97,50 @@ export const overtime: RuleFn = (context: RuleContext): Flag[] => {
     );
   }
 
+  /* ------------- kontraktsvilkår over grensen ingen avtale kan gå over */
+  /*
+   * §§ 10-5 og 10-6 setter ytre grenser: 12,5 timer i døgnet og 54 timer i uka selv med
+   * gjennomsnittsberegning, 25 timer overtid i uka og 50 i fire uker etter avtale med
+   * tillitsvalgte, 300 timer i året etter tillatelse fra Arbeidstilsynet. Grensene over dem
+   * er «free» her, fordi en avtale lovlig kan heve dem, og da skal kontrakten gjelde — men
+   * et vilkår over den ytre grensen er noe annet enn et høyt vilkår. Appen regner videre med
+   * kontraktens tall og sier hva den ytre grensen er, og hvem som kan gå over den. Den
+   * avgjør ikke om avtalen finnes; det er det bare du som kan sjekke.
+   */
+  for (const [what, threshold] of [
+    ['grense per arbeidsdøgn', daily],
+    ['grense per uke', weekly],
+    ['overtid per sju dager', maxOvertimePer7Days(context.contract, context.rule)],
+    ['overtid per fire uker', maxOvertimePer4Weeks(context.contract, context.rule)],
+    ['overtid per 52 uker', maxOvertimePer52Weeks(context.contract, context.rule)],
+  ] as const) {
+    const outer = threshold.aboveOuterLimit;
+    if (!outer) continue;
+    flags.push(
+      buildFlag(context, {
+        key: `avtale-over-lovens-ytre-grense:${what}`,
+        severity: 'bor_sjekkes',
+        title: `Kontraktens ${what} er over grensen loven setter`,
+        periodLabel: 'Hele perioden',
+        periodStart: range.start,
+        periodEnd: range.end,
+        message:
+          `Kontrakten din oppgir ${formatHours(outer.contractValue)} som ${what}. Loven setter en ` +
+          `ytre grense på ${formatHours(outer.outerLimit)} — den kan ikke avtales bort, heller ikke ` +
+          `med gjennomsnittsberegning. Vi har regnet med kontraktens tall, for den er det du har ` +
+          `blitt enig om, men tallet bør sjekkes: står det riktig i avtalen, og finnes avtalen med ` +
+          `tillitsvalgte eller tillatelsen fra Arbeidstilsynet som skal til?`,
+        evidence: [
+          ev('I kontrakten', formatHours(outer.contractValue)),
+          ev('Lovens ytre grense', `${formatHours(outer.outerLimit)} (${outer.law})`),
+          ev('Brukt i utregningene', formatHours(threshold.value)),
+        ],
+        amountOre: null,
+        documentRefs: contractRef(context),
+      }),
+    );
+  }
+
   /* --------- høyere arbeidstidsgrense enn loven, uten gjennomsnittsberegning */
   const statutoryDaily = numberParam(context.rule, 'normal_daily_limit_hours', 9);
   const statutoryWeekly = numberParam(context.rule, 'normal_weekly_limit_hours', 40);

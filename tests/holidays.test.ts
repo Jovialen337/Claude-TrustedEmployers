@@ -128,3 +128,27 @@ describe('søn- og helgedagsarbeid etter § 10-10 første ledd', () => {
     expect(sundayWorkWindows('2026-08-10', '2026-08-14').filter((w) => w.days.some((d) => d >= '2026-08-10' && d <= '2026-08-14'))).toHaveLength(0);
   });
 });
+
+describe('§ 10-10 teller vernede perioder, ikke datoer', () => {
+  it('samler pinseaften, pinsedag og 2. pinsedag i én periode', () => {
+    // Påsken 2026 er 5. april, så pinsedag er 24. mai. Perioden åpner kl. 15 på pinseaften
+    // 23. mai og lukker kl. 22 den 25. mai, dagen før neste virkedag.
+    const windows = sundayWorkWindows('2026-05-20', '2026-05-31');
+    const pinse = windows.find((window) => window.fromDate === '2026-05-23')!;
+    expect(pinse.fromMinute).toBe(15 * 60);
+    expect(pinse.toDate).toBe('2026-05-25');
+    expect(pinse.toMinute).toBe(22 * 60);
+    // `days` er de vernede søn- og helgedagene selv. Pinseaften er en virkedag — det er bare
+    // der perioden åpner, kl. 15 i stedet for kl. 18.
+    expect(pinse.days).toEqual(['2026-05-24', '2026-05-25']);
+  });
+
+  it('åpner en vanlig søndagsperiode kl. 18 lørdag', () => {
+    const windows = sundayWorkWindows('2026-08-01', '2026-08-09');
+    const first = windows[0]!;
+    expect(first.fromDate).toBe('2026-08-01');
+    expect(first.fromMinute).toBe(18 * 60);
+    expect(first.toDate).toBe('2026-08-02');
+    expect(first.toMinute).toBe(22 * 60);
+  });
+});

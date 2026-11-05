@@ -24,12 +24,20 @@ export interface Threshold {
    * used instead. Rules turn this into a finding.
    */
   belowStatutory: { contractValue: number; statutory: number } | null;
+  /**
+   * Set when the contract term is legitimate in itself but passes the limit no agreement may
+   * pass — § 10-5's 12,5 hours a day and 54 hours a week, § 10-6's 25 hours of overtime in a
+   * week. Those are 'free' thresholds: an averaging agreement may raise them, so the contract
+   * governs, and the tool must not call the term a breach. But it must not go silent either.
+   * The value stays the contract's; the rule says what the outer limit is and who may pass it.
+   */
+  aboveOuterLimit: { contractValue: number; outerLimit: number; law: string } | null;
 }
 
 export const CONTRACT_LABEL = 'fra kontrakten din';
 
 function fromLaw(value: number, law: string): Threshold {
-  return { value, source: 'lov', label: law, belowStatutory: null };
+  return { value, source: 'lov', label: law, belowStatutory: null, aboveOuterLimit: null };
 }
 
 /**
@@ -44,6 +52,13 @@ function resolve(
   statutory: number,
   law: string,
   direction: 'free' | 'atLeast' | 'atMost',
+  /**
+   * The limit no agreement may pass, with its own citation. It carries its own law text
+   * because the ordinary case must keep citing the ordinary paragraph: appending "jf. § 10-5"
+   * to every daily limit turned "9,0 t (arbeidsmiljøloven § 10-4)" into something harder to
+   * read, for a sentence that only matters when the term is unusually high.
+   */
+  outerLimit?: { value: number; law: string },
 ): Threshold {
   if (contractValue === null) return fromLaw(statutory, law);
 
@@ -57,10 +72,20 @@ function resolve(
       source: 'lov',
       label: law,
       belowStatutory: { contractValue, statutory },
+      aboveOuterLimit: null,
     };
   }
 
-  return { value: contractValue, source: 'kontrakt', label: CONTRACT_LABEL, belowStatutory: null };
+  return {
+    value: contractValue,
+    source: 'kontrakt',
+    label: CONTRACT_LABEL,
+    belowStatutory: null,
+    aboveOuterLimit:
+      outerLimit !== undefined && contractValue > outerLimit.value
+        ? { contractValue, outerLimit: outerLimit.value, law: outerLimit.law }
+        : null,
+  };
 }
 
 /* ------------------------------------------------ arbeidstid og overtid */
@@ -72,6 +97,7 @@ export function dailyLimit(contract: Contract, rule: Rule): Threshold {
     numberParam(rule, 'normal_daily_limit_hours', 9),
     'arbeidsmiljøloven § 10-4',
     'free',
+    { value: 12.5, law: 'arbeidsmiljøloven § 10-5 andre ledd' },
   );
 }
 
@@ -81,6 +107,7 @@ export function weeklyLimit(contract: Contract, rule: Rule): Threshold {
     numberParam(rule, 'normal_weekly_limit_hours', 40),
     'arbeidsmiljøloven § 10-4',
     'free',
+    { value: 54, law: 'arbeidsmiljøloven § 10-5 andre ledd' },
   );
 }
 
@@ -102,6 +129,7 @@ export function maxOvertimePer7Days(contract: Contract, rule: Rule): Threshold {
     numberParam(rule, 'max_overtime_hours_per_7_days', 10),
     'arbeidsmiljøloven § 10-6',
     'free',
+    { value: 25, law: 'arbeidsmiljøloven § 10-6 femte ledd' },
   );
 }
 
@@ -111,6 +139,7 @@ export function maxOvertimePer4Weeks(contract: Contract, rule: Rule): Threshold 
     numberParam(rule, 'max_overtime_hours_per_4_weeks', 25),
     'arbeidsmiljøloven § 10-6',
     'free',
+    { value: 50, law: 'arbeidsmiljøloven § 10-6 femte ledd' },
   );
 }
 
@@ -120,6 +149,7 @@ export function maxOvertimePer52Weeks(contract: Contract, rule: Rule): Threshold
     numberParam(rule, 'max_overtime_hours_per_52_weeks', 200),
     'arbeidsmiljøloven § 10-6',
     'free',
+    { value: 300, law: 'arbeidsmiljøloven § 10-6 sjette ledd' },
   );
 }
 
@@ -136,6 +166,7 @@ export function dailyRest(contract: Contract, rule: Rule): Threshold {
       source: 'lov',
       label: 'arbeidsmiljøloven § 10-8',
       belowStatutory: { contractValue: contract.agreedDailyRestHours, statutory: floor },
+      aboveOuterLimit: null,
     };
   }
   return {
@@ -143,6 +174,7 @@ export function dailyRest(contract: Contract, rule: Rule): Threshold {
     source: 'kontrakt',
     label: CONTRACT_LABEL,
     belowStatutory: null,
+    aboveOuterLimit: null,
   };
 }
 
@@ -156,6 +188,7 @@ export function weeklyRest(contract: Contract, rule: Rule): Threshold {
       source: 'lov',
       label: 'arbeidsmiljøloven § 10-8',
       belowStatutory: { contractValue: contract.agreedWeeklyRestHours, statutory: floor },
+      aboveOuterLimit: null,
     };
   }
   return {
@@ -163,6 +196,7 @@ export function weeklyRest(contract: Contract, rule: Rule): Threshold {
     source: 'kontrakt',
     label: CONTRACT_LABEL,
     belowStatutory: null,
+    aboveOuterLimit: null,
   };
 }
 

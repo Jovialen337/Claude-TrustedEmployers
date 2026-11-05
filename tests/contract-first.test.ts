@@ -334,3 +334,39 @@ describe('reglene bruker kontrakten', () => {
     expect(everything.blockers).toEqual([]);
   });
 });
+
+describe('grensene ingen avtale kan gå over (§§ 10-5, 10-6)', () => {
+  it('sier fra om en døgngrense over 12,5 timer, men regner med kontraktens tall', () => {
+    const result = check({
+      contract: contract({ normalDailyLimitHours: 14, averagingAgreement: true }),
+      shifts: [shift('2026-08-03', '08:00', '21:00')],
+      payslips: [payslip('2026-08-01', '2026-08-31', [ordinaryLine(13)])],
+    });
+    const flag = result.flags.find((f) => f.id.includes('avtale-over-lovens-ytre-grense'))!;
+    expect(flag.severity).toBe('bor_sjekkes');
+    expect(flag.evidence.find((e) => e.label === 'Lovens ytre grense')!.value).toContain('12,5 t');
+    expect(flag.evidence.find((e) => e.label === 'Brukt i utregningene')!.value).toBe('14,0 t');
+    // 13 timer er under kontraktens 14, så det er ingen overtid å kreve.
+    expect(flagsFor(result, 'overtime').filter((f) => f.amountOre !== null)).toHaveLength(0);
+  });
+
+  it('holder seg stille når grensen er høy men innenfor lovens ytre grense', () => {
+    const result = check({
+      contract: contract({ normalDailyLimitHours: 12, averagingAgreement: true }),
+      shifts: [shift('2026-08-03', '08:00', '18:00')],
+      payslips: [payslip('2026-08-01', '2026-08-31', [ordinaryLine(10)])],
+    });
+    expect(result.flags.filter((f) => f.id.includes('ytre-grense'))).toHaveLength(0);
+  });
+
+  it('nevner bare § 10-4 i det vanlige tilfellet, ikke § 10-5', () => {
+    const result = check({
+      shifts: [shift('2026-08-03', '08:00', '19:00')],
+      payslips: [payslip('2026-08-01', '2026-08-31', [ordinaryLine(11)])],
+    });
+    const overtimeFlag = flagsFor(result, 'overtime').find((f) => f.amountOre !== null)!;
+    const limit = overtimeFlag.evidence.find((e) => e.label === 'Grense per arbeidsdøgn')!.value;
+    expect(limit).toContain('arbeidsmiljøloven § 10-4');
+    expect(limit).not.toContain('10-5');
+  });
+});

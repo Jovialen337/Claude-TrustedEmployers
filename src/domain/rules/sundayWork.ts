@@ -13,10 +13,10 @@
  * Sunday" missed every Saturday evening from 18:00, which in a café or a shop is most of them.
  */
 import { effectiveShifts, segmentsOf } from '../aggregate';
-import { holidayName, isHoliday, sundayWorkMinutes, sundayWorkWindows } from '../holidays';
+import { holidayName, sundayWorkMinutes, sundayWorkWindows } from '../holidays';
 import { formatHours, roundHours } from '../money';
 import type { DateStr, Flag } from '../schemas';
-import { formatDateLong, weekdayIso } from '../time';
+import { formatDateLong, toEpochDay } from '../time';
 import { buildFlag, contractRef, ev, numberParam, refsFromSegments } from './helpers';
 import type { RuleContext, RuleFn } from './types';
 
@@ -58,27 +58,40 @@ export const sundayWork: RuleFn = (context: RuleContext): Flag[] => {
 
   if (worked.length === 0) return flags;
 
-  /* --------------- hvor mange av søn- og helgedagene i perioden ble jobbet? */
-  const allSundaysAndHolidays: DateStr[] = [];
-  for (let day = range.start; day <= range.end; ) {
-    if (weekdayIso(day) === 7 || isHoliday(day)) allSundaysAndHolidays.push(day);
-    const next = new Date(`${day}T00:00:00Z`);
-    next.setUTCDate(next.getUTCDate() + 1);
-    day = next.toISOString().slice(0, 10);
-  }
+  /*
+   * Telt i vinduer, ikke i datoer.
+   *
+   * § 10-10 første ledd verner en *periode* — lørdag 18:00 til søndag 22:00, eller julaften
+   * 15:00 gjennom hele julehelga — så vinduet er enheten loven bruker, og den eneste enheten
+   * de to sidene av sammenligningen kan dele. Å telle jobbede *datoer* mot kalendersøndager
+   * blandet de to: en lørdagskveld og søndagen etter ble to jobbede dager mot én søndag, og
+   * det ga «8 av 4 søn- og helgedager» og «Fri: −4». Det skjulte også søndager på rad, fordi
+   * lørdagene lå imellom i lista.
+   */
+  const workedDates = new Set(worked.map((entry) => entry.date));
+  const workedWindows = windows.filter((window) =>
+    [...workedDates].some((date) => date >= window.fromDate && date <= window.toDate),
+  );
 
-  const total = allSundaysAndHolidays.length;
-  const free = total - worked.length;
+  const total = windows.length;
+  const free = total - workedWindows.length;
   const workedTooMany = total > 1 && free < Math.floor(total * minFreeShare);
 
-  // Two Sundays in a row is the clearest breach of "every other Sunday off".
+  /*
+   * To vernede perioder på rad er det tydeligste bruddet på «fri annenhver søn- og helgedag».
+   * Sammenlignet vindu mot vindu: forrige versjon sammenlignet nabooppføringer i en liste som
+   * også holdt lørdagskvelder, så fire søndager på rad gikk upåaktet hen i det øyeblikket
+   * arbeidstakeren også hadde jobbet lørdagskveldene — strengt tatt mer § 10-10-arbeid
+   * rapportert som mindre.
+   */
   const consecutive: { first: DateStr; second: DateStr }[] = [];
-  for (let i = 1; i < worked.length; i += 1) {
-    const previous = worked[i - 1]!;
-    const current = worked[i]!;
-    const days = (new Date(`${current.date}T00:00:00Z`).getTime() - new Date(`${previous.date}T00:00:00Z`).getTime()) / 86_400_000;
-    if (weekdayIso(previous.date) === 7 && weekdayIso(current.date) === 7 && days === 7) {
-      consecutive.push({ first: previous.date, second: current.date });
+  for (let i = 1; i < workedWindows.length; i += 1) {
+    const previous = workedWindows[i - 1]!;
+    const current = workedWindows[i]!;
+    const gap = toEpochDay(current.toDate) - toEpochDay(previous.toDate);
+    // Helger på rad: neste vernede periode, omtrent en uke etter.
+    if (gap >= 5 && gap <= 9) {
+      consecutive.push({ first: previous.toDate, second: current.toDate });
     }
   }
 
@@ -87,7 +100,7 @@ export const sundayWork: RuleFn = (context: RuleContext): Flag[] => {
       buildFlag(context, {
         key: 'sondagsarbeid',
         severity: 'til_info',
-        title: `Du har jobbet ${worked.length} søn- eller helgedager`,
+        title: `Du har jobbet ${workedWindows.length} søn- eller helgedager`,
         periodLabel: 'Hele perioden',
         periodStart: range.start,
         periodEnd: range.end,
@@ -98,7 +111,7 @@ export const sundayWork: RuleFn = (context: RuleContext): Flag[] => {
           `den følgende søn- eller helgedagen.`,
         evidence: [
           ev('Søn- og helgedager i perioden', String(total)),
-          ev('Jobbet', String(worked.length)),
+          ev('Jobbet', String(workedWindows.length)),
           ev('Fri', String(free)),
           ...worked
             .slice(0, 8)
@@ -125,7 +138,7 @@ export const sundayWork: RuleFn = (context: RuleContext): Flag[] => {
       periodStart: range.start,
       periodEnd: range.end,
       message:
-        `Du skal ha arbeidsfri annenhver søn- og helgedag. Vi finner ${worked.length} av ${total} ` +
+        `Du skal ha arbeidsfri annenhver søn- og helgedag. Vi finner ${workedWindows.length} av ${total} ` +
         `søn- og helgedager jobbet i perioden` +
         (consecutive.length > 0
           ? `, blant annet ${formatDateLong(consecutive[0]!.first)} og ${formatDateLong(consecutive[0]!.second)} rett etter hverandre.`
@@ -138,7 +151,7 @@ export const sundayWork: RuleFn = (context: RuleContext): Flag[] => {
           : `Du har ikke oppgitt en slik avtale — sjekk om den finnes, og hva den sier.`),
       evidence: [
         ev('Søn- og helgedager i perioden', String(total)),
-        ev('Jobbet', String(worked.length)),
+        ev('Jobbet', String(workedWindows.length)),
         ev('Fri', String(free)),
         ev('Søndager på rad', String(consecutive.length)),
         ev('Skriftlig avtale oppgitt', agreed ? 'Ja' : 'Nei'),

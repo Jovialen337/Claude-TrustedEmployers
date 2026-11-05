@@ -35,7 +35,7 @@ describe('demoen', () => {
         // De plantede feilene
         'overtime:demo-slipp-2026-06',
         'overtime:demo-slipp-2026-07',
-        'scheduled_vs_paid:sats:demo-slipp-2026-05:demo-linje-1',
+        'scheduled_vs_paid:sats:demo-slipp-2026-05:demo-linje-2026-05-1',
         'scheduled_vs_paid:timer:demo-slipp-2026-07',
         'supplements:demo-slipp-2026-05:helligdagstillegg',
         'supplements:demo-slipp-2026-06:kveldstillegg',
@@ -77,11 +77,17 @@ describe('demoen', () => {
     // ikke søndager, og ikke to på rad.
     const flag = byId.get('sunday_work:sondagsarbeid')!;
     expect(flag.severity).toBe('til_info');
-    // Three, not two: 23 May 2026 is pinseaften (Easter is 5 April, so Pentecost is 24 May),
-    // and § 10-10 første ledd andre punktum opens the protected period at 15:00 on that day.
-    // The 10:00–18:00 shift therefore holds three hours of helgedagsarbeid. Reading the rule
-    // off the calendar date alone scored it as none.
-    expect(flag.evidence.find((e) => e.label === 'Jobbet')!.value).toBe('3');
+    /*
+     * Jobbet teller vernede perioder, ikke datoer. Påsken 2026 faller 5. april, så pinsedag
+     * er 24. mai: pinseaften 23. mai, 2. pinsedag 25. mai. § 10-10 første ledd åpner perioden
+     * kl. 15 på pinseaften og lukker den kl. 22 dagen før neste virkedag — altså 25. mai
+     * kl. 22. De to vaktene 23. og 25. mai ligger inne i samme periode, og Kristi
+     * himmelfartsdag 14. mai er den andre. Tre jobbede datoer, to vernede perioder.
+     *
+     * Telt i datoer ble de tre, mot et antall kalendersøndager de ikke kunne sammenlignes
+     * med — det var slik «8 av 4 søn- og helgedager» og «Fri: −4» kunne oppstå.
+     */
+    expect(flag.evidence.find((e) => e.label === 'Jobbet')!.value).toBe('2');
     const pinseaften = flag.evidence.find((e) => e.label.includes('23. mai'));
     expect(pinseaften?.value).toBe('2,81 t');
   });
@@ -123,7 +129,7 @@ describe('demoen', () => {
   });
 
   it('krever differansen på feil timesats i mai: 110,0 t × 13,50 kr = 1 485,00 kr', () => {
-    const flag = byId.get('scheduled_vs_paid:sats:demo-slipp-2026-05:demo-linje-1')!;
+    const flag = byId.get('scheduled_vs_paid:sats:demo-slipp-2026-05:demo-linje-2026-05-1')!;
     expect(flag.amountOre).toBe(148_500);
     expect(flag.calculation!.expression).toBe('110,0 t × (198,50 kr − 185,00 kr) = 1 485,00 kr');
   });
@@ -237,5 +243,18 @@ describe('demoen', () => {
     // Mandag 20. juli: planlagt til 22:00, jobbet til 23:00.
     expect(week30.plannedHours).toBe(5);
     expect(week30.workedHours).toBe(28.5);
+  });
+});
+
+describe('demoen er den samme hver gang den lastes', () => {
+  it('gir identiske funn, med identiske id-er, to ganger i samme prosess', () => {
+    const now = '2026-09-21T12:00:00.000Z';
+    const first = runCheck(demoWorkspace(now), { now });
+    const second = runCheck(demoWorkspace(now), { now });
+    /*
+     * En løpende teller i demodataene ga linjene nye id-er ved andre lasting, og flagg-id-ene
+     * fulgte med. Da skifter funnene identitet uten at noe er endret.
+     */
+    expect(JSON.stringify(second)).toBe(JSON.stringify(first));
   });
 });
